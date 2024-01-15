@@ -10,24 +10,24 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@adobe/react-spectrum": "^3.33.0",
+    "@adobe/react-spectrum": "^3.33.1",
     "@spectrum-icons/workflow": "^4.2.8",
-    "@tauri-apps/api": "^1.5.2",
+    "@tauri-apps/api": "^1.5.3",
     "react": "^18.2.0",
-    "react-aria": "^3.31.0",
-    "react-aria-components": "^1.0.0",
+    "react-aria": "^3.31.1",
+    "react-aria-components": "^1.0.1",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.5.8",
-    "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.7",
+    "@tauri-apps/cli": "^1.5.9",
+    "@types/react": "^18.2.47",
+    "@types/react-dom": "^18.2.18",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
     "tailwindcss-react-aria-components": "^1.0.0",
-    "typescript": "^5.0.2",
-    "vite": "^5.0.0"
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11"
   }
 }

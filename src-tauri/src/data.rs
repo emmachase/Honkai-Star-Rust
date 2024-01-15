@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::IntoDeserializer};
 use serde_tuple::{Deserialize_tuple, Serialize_tuple};
 use lazy_static::lazy_static;
 
@@ -11,10 +11,24 @@ const CHARACTER_SKILL_TREES_JSON: &str = include_str!("./data/character_skill_tr
 const CHARACTER_SKILLS_JSON     : &str = include_str!("./data/character_skills.json");
 const CHARACTERS_JSON           : &str = include_str!("./data/characters.json");
 const LIGHT_CONE_PROMOTIONS_JSON: &str = include_str!("./data/light_cone_promotions.json");
+const LIGHT_CONE_RANKS_JSON     : &str = include_str!("./data/light_cone_ranks.json");
 const LIGHT_CONES_JSON          : &str = include_str!("./data/light_cones.json");
 const RELIC_SETS_JSON           : &str = include_str!("./data/relic_sets.json");
 const RELIC_MAIN_AFFIXES_JSON   : &str = include_str!("./data/relic_main_affixes.json");
 const RELIC_SUB_AFFIXES_JSON    : &str = include_str!("./data/relic_sub_affixes.json");
+
+fn empty_string_as_none<'de, D, T>(de: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: serde::Deserialize<'de>,
+{
+    let opt = Option::<String>::deserialize(de)?;
+    let opt = opt.as_ref().map(String::as_str);
+    match opt {
+        None | Some("") => Ok(None),
+        Some(s) => T::deserialize(s.into_deserializer()).map(Some)
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy)]
 pub struct PromotionStepSpec {
@@ -126,6 +140,7 @@ pub enum EffectPropertyType {
     WindAddedRatio,
     QuantumAddedRatio,
     ImaginaryAddedRatio,
+    AllDamageTypeAddedRatio,
     
     BreakDamageAddedRatioBase,
     SPRatioBase,
@@ -223,8 +238,11 @@ pub struct CharacterSkillDescriptor {
     pub id: String,
     pub name: String,
     pub max_level: u8,
-    pub element: Element,
+    #[serde(deserialize_with = "empty_string_as_none")]
+    pub element: Option<Element>,
+    #[serde(rename = "type")]
     pub skill_type: SkillType,
+    #[serde(rename = "type_text")]
     pub skill_type_text: String,
     pub effect: SkillEffect,
     pub effect_text: String,
@@ -234,12 +252,34 @@ pub struct CharacterSkillDescriptor {
     pub icon: String,
 }
 
+impl CharacterSkillDescriptor {
+    pub fn levels<T: for<'a> Deserialize<'a>>(&self) -> Vec<T> {
+        return self.params.iter().map(|p| serde_json::from_value(serde_json::to_value(p).unwrap()).unwrap()).collect();
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LightConeEffectsDescriptor {
+    pub id: String,
+    pub skill: String,
+    pub desc: String,
+    pub params: Vec<Vec<f64>>, // interpolation params for desc
+    pub properties: Vec<Vec<EffectProperty>>,
+}
+
+impl LightConeEffectsDescriptor {
+    pub fn superimpositions<T: for<'a> Deserialize<'a>>(&self) -> Vec<T> {
+        return self.params.iter().map(|p| serde_json::from_value(serde_json::to_value(p).unwrap()).unwrap()).collect();
+    }
+}
+
 lazy_static! {
     pub static ref CHARACTER_PROMOTIONS: HashMap<String, Promotions<CharacterPromotionSpec>> = serde_json::from_str(&CHARACTER_PROMOTIONS_JSON).unwrap();
     pub static ref CHARACTER_SKILL_TREES: HashMap<String, CharacterTraceNode> = serde_json::from_str(&CHARACTER_SKILL_TREES_JSON).unwrap();
     pub static ref CHARACTER_SKILLS: HashMap<String, CharacterSkillDescriptor> = serde_json::from_str(&CHARACTER_SKILLS_JSON).unwrap();
     pub static ref CHARACTERS: HashMap<String, CharacterDescriptor> = serde_json::from_str(&CHARACTERS_JSON).unwrap();
     pub static ref LIGHT_CONE_PROMOTIONS: HashMap<String, Promotions<LightConePromotionSpec>> = serde_json::from_str(&LIGHT_CONE_PROMOTIONS_JSON).unwrap();
+    pub static ref LIGHT_CONE_RANKS: HashMap<String, LightConeEffectsDescriptor> = serde_json::from_str(&LIGHT_CONE_RANKS_JSON).unwrap();
     pub static ref LIGHT_CONES: HashMap<String, LightConeDescriptor> = serde_json::from_str(&LIGHT_CONES_JSON).unwrap();
     pub static ref RELIC_SETS: HashMap<String, RelicSetDescriptor> = serde_json::from_str(&RELIC_SETS_JSON).unwrap();
     pub static ref RELIC_MAIN_AFFIXES: HashMap<String, RelicAffixList<RelicMainAffixDescriptor>> = serde_json::from_str(&RELIC_MAIN_AFFIXES_JSON).unwrap();
@@ -264,6 +304,10 @@ pub fn use_character(character: Character) -> &'static CharacterDescriptor {
 
 pub fn use_light_cone_promotions(light_cone: LightCone) -> &'static Promotions<LightConePromotionSpec> {
     return &LIGHT_CONE_PROMOTIONS[light_cone.to_id()];
+}
+
+pub fn use_light_cone_effects(light_cone: LightCone) -> &'static LightConeEffectsDescriptor {
+    return &LIGHT_CONE_RANKS[light_cone.to_id()];
 }
 
 pub fn use_light_cone(light_cone: LightCone) -> &'static LightConeDescriptor {

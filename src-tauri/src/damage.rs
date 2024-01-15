@@ -3,6 +3,7 @@ use crate::data::Element;
 pub type Level = u8;
 pub type Ascension = u8;
 pub type Eidolon = u8;
+pub type Superimposition = u8;
 
 #[derive(Debug, Clone, Copy)]
 pub struct CharacterStats {
@@ -23,8 +24,51 @@ pub struct CharacterStats {
     pub elemental_dmg_bonus: f64,
 }
 
+impl CharacterStats {
+    pub fn hp(&self, boosts: &Boosts) -> f64 {
+        return self.hp * (1.0 + boosts.hp_pct) + boosts.hp_flat;
+    }
+
+    pub fn atk(&self, boosts: &Boosts) -> f64 {
+        return self.atk * (1.0 + boosts.atk_pct) + boosts.atk_flat;
+    }
+
+    pub fn def(&self, boosts: &Boosts) -> f64 {
+        return self.def * (1.0 + boosts.def_pct) + boosts.def_flat;
+    }
+
+    pub fn spd(&self, boosts: &Boosts) -> f64 {
+        return self.spd + boosts.spd;
+    }
+
+    pub fn effect_res(&self, boosts: &Boosts) -> f64 {
+        return self.effect_res + boosts.effect_res;
+    }
+
+    pub fn crit_rate(&self, boosts: &Boosts) -> f64 {
+        return self.crit_rate + boosts.crit_rate;
+    }
+
+    pub fn crit_dmg(&self, boosts: &Boosts) -> f64 {
+        return self.crit_dmg + boosts.crit_dmg;
+    }
+
+    pub fn break_effect(&self, boosts: &Boosts) -> f64 {
+        return self.break_effect + boosts.break_effect;
+    }
+
+    pub fn energy_recharge(&self, boosts: &Boosts) -> f64 {
+        return self.energy_recharge + boosts.energy_recharge;
+    }
+
+    pub fn outgoing_healing_boost(&self, boosts: &Boosts) -> f64 {
+        return self.outgoing_healing_boost + boosts.outgoing_healing_boost;
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct EnemyConfig {
+    pub count: u8,
     pub level: Level,
 
     pub resistance: f64,
@@ -38,7 +82,7 @@ pub struct EnemyConfig {
  * - Conditional set effects
  * - Extra boosts (team buffs)
  */
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Boosts {
     pub hp_flat: f64,
     pub hp_pct: f64,
@@ -49,6 +93,7 @@ pub struct Boosts {
     
     pub spd: f64,
     pub effect_res: f64,
+    pub effect_hit_rate: f64,
     pub crit_rate: f64,
     pub crit_dmg: f64,
     pub break_effect: f64,
@@ -90,7 +135,8 @@ fn calculate_common_multiplier(
     let def_multiplier = calculate_def_multiplier(character_stats, enemy_config, boosts);
     let broken_multiplier = if enemy_config.weakness_broken { 1.0 } else { 0.9 };
 
-    let res_multiplier           = 1.0 - (enemy_config.resistance - boosts.res_pen); // Enemy RES can be negative, funky :)
+    let resistance = if enemy_config.elemental_weakness { 0.0 } else { enemy_config.resistance };
+    let res_multiplier           = 1.0 - (resistance - boosts.res_pen); // Enemy RES can be negative, funky :)
     let vulnerability_multiplier = 1.0 + boosts.extra_vulnerability;
     let damage_boost             = 1.0 + boosts.all_type_dmg_boost;
     let damage_boost = if enemy_config.elemental_weakness {
