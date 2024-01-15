@@ -2,6 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![allow(dead_code)] // TODO: remove
 
+use std::{thread, sync::Arc};
+
 use characters::common::CharacterKit;
 use damage::CharacterStats;
 use data::CharacterDescriptor;
@@ -89,33 +91,74 @@ fn greet(name: &str) -> String {
     };
 
     let cols = calculate_cols(
-        (&character, &kit, &character_state, &character_stats), 
-        (&lc_kit, &light_cone_state),
-        &enemy_config
+        CalculatorParameters {
+            character: character.clone(),
+            character_kit: Arc::new(kit),
+            character_state,
+            character_stats,
+            light_cone: light_cone_id,
+            light_cone_kit: Arc::new(lc_kit),
+            light_cone_state,
+            enemy_config,
+        }
     );
 
     format!("No relics: {:?} {:?}", character_stats, cols)
 }
 
-fn calculate_cols(character: (&'static CharacterDescriptor, &dyn CharacterKit, &CharacterState, &CharacterStats), light_cone: (&dyn LightConeKit, &LightConeState), enemy_config: &EnemyConfig) -> Vec<(String, f64)> {
+#[derive(Clone)]
+struct CalculatorParameters {
+    character: CharacterDescriptor,
+    character_kit: Arc<dyn CharacterKit+Sync+Send>,
+    character_state: CharacterState,
+    character_stats: CharacterStats,
+    light_cone: LightCone,
+    light_cone_kit: Arc<dyn LightConeKit+Sync+Send>,
+    light_cone_state: LightConeState,
+    enemy_config: EnemyConfig,
+}
+
+fn calculate_cols(
+    // character: (&CharacterDescriptor, &(dyn CharacterKit+Sync), &CharacterState, &CharacterStats), light_cone: (&(dyn LightConeKit+Sync), &LightConeState), enemy_config: &EnemyConfig
+    params: CalculatorParameters
+) -> Vec<(String, f64)> {
     let mut boosts = Boosts::default();
     
     boosts.atk_flat += 352.8; // Hands Relic TODO: draw the rest of the owl
-
-    let (character, kit, character_state, character_stats) = character;
-    let (lc_kit, light_cone_state) = light_cone;
     
-    apply_minor_trace_effects(character, &character_state, &mut boosts);
-    lc_kit.apply_static_passives(&enemy_config, &light_cone_state, &mut boosts);
-    kit.apply_static_passives(&enemy_config, &character_state, &mut boosts);
+    apply_minor_trace_effects(&params.character, &params.character_state, &mut boosts);
+    params.light_cone_kit.apply_static_passives(&params.enemy_config, &params.light_cone_state, &mut boosts);
+    params.character_kit.apply_static_passives(&params.enemy_config, &params.character_state, &mut boosts);
 
-    let cols = kit.get_stat_columns();
+    // let mut threads = vec![];
+    // for tid in 0..16 {
+    //     // let my_kit = kit.clone();
+    //     let params = params.clone();
+    //     let cols = params.character_kit.get_stat_columns();
+    //     threads.push(thread::spawn(move || {
+    //         for _ in 0..20_000_000/16 {
+    //             let r: Vec<(String, f64)> = cols.iter().map(|&column_type| {
+    //                 let mut special_boosts = boosts.clone();
+    //                 params.light_cone_kit.apply_conditional_passives(&params.enemy_config, column_type, &params.light_cone_state, &mut special_boosts);
+    //                 params.character_kit.apply_conditional_passives(&params.enemy_config, column_type, &params.character_state, &mut special_boosts);
+
+    //                 (column_type.to_name().to_owned(), params.character_kit.compute_stat_column(column_type, &params.character_state, &params.character_stats, &special_boosts, &params.enemy_config))
+    //             }).collect();
+    //         }
+    //     }));
+    // }
+
+    // for thread in threads {
+    //     thread.join().unwrap();
+    // }
+
+    let cols = params.character_kit.get_stat_columns();
     cols.iter().map(|&column_type| {
         let mut special_boosts = boosts.clone();
-        lc_kit.apply_conditional_passives(&enemy_config, column_type, &light_cone_state, &mut special_boosts);
-        kit.apply_conditional_passives(&enemy_config, column_type, &character_state, &mut special_boosts);
+        params.light_cone_kit.apply_conditional_passives(&params.enemy_config, column_type, &params.light_cone_state, &mut special_boosts);
+        params.character_kit.apply_conditional_passives(&params.enemy_config, column_type, &params.character_state, &mut special_boosts);
 
-        (column_type.to_name().to_owned(), kit.compute_stat_column(column_type, &character_state, &character_stats, &special_boosts, &enemy_config))
+        (column_type.to_name().to_owned(), params.character_kit.compute_stat_column(column_type, &params.character_state, &params.character_stats, &special_boosts, &params.enemy_config))
     }).collect()
 }
 

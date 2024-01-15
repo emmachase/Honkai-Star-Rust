@@ -82,7 +82,7 @@ pub enum CharacterInternalPath {
     Priest,  // Abundance
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct CharacterDescriptor {
     pub id: String,
     pub name: String,

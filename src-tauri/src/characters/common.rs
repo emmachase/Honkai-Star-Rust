@@ -1,24 +1,24 @@
 use crate::{data_mappings::Character, data::{use_character, use_character_trace_node, CharacterDescriptor, EffectPropertyType}, damage::{Boosts, EnemyConfig, CharacterStats}, promotions::CharacterState};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct CharacterTraceIds {
-    pub ability_1: &'static str,
-    pub ability_2: &'static str,
-    pub ability_3: &'static str,
-    pub stat_1   : &'static str,
-    pub stat_2   : &'static str,
-    pub stat_3   : &'static str,
-    pub stat_4   : &'static str,
-    pub stat_5   : &'static str,
-    pub stat_6   : &'static str,
-    pub stat_7   : &'static str,
-    pub stat_8   : &'static str,
-    pub stat_9   : &'static str,
-    pub stat_10  : &'static str,
+    pub ability_1: String,
+    pub ability_2: String,
+    pub ability_3: String,
+    pub stat_1   : String,
+    pub stat_2   : String,
+    pub stat_3   : String,
+    pub stat_4   : String,
+    pub stat_5   : String,
+    pub stat_6   : String,
+    pub stat_7   : String,
+    pub stat_8   : String,
+    pub stat_9   : String,
+    pub stat_10  : String,
 }
 
 impl CharacterTraceIds {
-    pub fn from_character(character: &'static CharacterDescriptor) -> Self {
+    pub fn from_character(character: &CharacterDescriptor) -> Self {
         let mut trace_ids: Vec<&str> = Vec::new();
         for trace_id in &character.skill_trees {
             let trace = use_character_trace_node(&trace_id);
@@ -30,19 +30,19 @@ impl CharacterTraceIds {
         assert_eq!(trace_ids.len(), 13);
 
         return Self {
-            ability_1: trace_ids[0],
-            ability_2: trace_ids[1],
-            ability_3: trace_ids[2],
-            stat_1   : trace_ids[3],
-            stat_2   : trace_ids[4],
-            stat_3   : trace_ids[5],
-            stat_4   : trace_ids[6],
-            stat_5   : trace_ids[7],
-            stat_6   : trace_ids[8],
-            stat_7   : trace_ids[9],
-            stat_8   : trace_ids[10],
-            stat_9   : trace_ids[11],
-            stat_10  : trace_ids[12],
+            ability_1: trace_ids[0].to_owned(),
+            ability_2: trace_ids[1].to_owned(),
+            ability_3: trace_ids[2].to_owned(),
+            stat_1   : trace_ids[3].to_owned(),
+            stat_2   : trace_ids[4].to_owned(),
+            stat_3   : trace_ids[5].to_owned(),
+            stat_4   : trace_ids[6].to_owned(),
+            stat_5   : trace_ids[7].to_owned(),
+            stat_6   : trace_ids[8].to_owned(),
+            stat_7   : trace_ids[9].to_owned(),
+            stat_8   : trace_ids[10].to_owned(),
+            stat_9   : trace_ids[11].to_owned(),
+            stat_10  : trace_ids[12].to_owned(),
         };
     }
 }
@@ -77,22 +77,22 @@ fn apply_std_trace_effect(trace_id: &str, boosts: &mut Boosts) {
     }
 }
 
-pub fn apply_minor_trace_effects(character: &'static CharacterDescriptor, character_state: &CharacterState, boosts: &mut Boosts) {
+pub fn apply_minor_trace_effects(character: &CharacterDescriptor, character_state: &CharacterState, boosts: &mut Boosts) {
     let trace_ids = CharacterTraceIds::from_character(character);
 
     // Major traces are applied in the character kit, since they are character-specific
     // But minor traces can be done automatically
 
-    if character_state.traces.stat_1  { apply_std_trace_effect(trace_ids.stat_1,  boosts); }
-    if character_state.traces.stat_2  { apply_std_trace_effect(trace_ids.stat_2,  boosts); }
-    if character_state.traces.stat_3  { apply_std_trace_effect(trace_ids.stat_3,  boosts); }
-    if character_state.traces.stat_4  { apply_std_trace_effect(trace_ids.stat_4,  boosts); }
-    if character_state.traces.stat_5  { apply_std_trace_effect(trace_ids.stat_5,  boosts); }
-    if character_state.traces.stat_6  { apply_std_trace_effect(trace_ids.stat_6,  boosts); }
-    if character_state.traces.stat_7  { apply_std_trace_effect(trace_ids.stat_7,  boosts); }
-    if character_state.traces.stat_8  { apply_std_trace_effect(trace_ids.stat_8,  boosts); }
-    if character_state.traces.stat_9  { apply_std_trace_effect(trace_ids.stat_9,  boosts); }
-    if character_state.traces.stat_10 { apply_std_trace_effect(trace_ids.stat_10, boosts); }
+    if character_state.traces.stat_1  { apply_std_trace_effect(&trace_ids.stat_1,  boosts); }
+    if character_state.traces.stat_2  { apply_std_trace_effect(&trace_ids.stat_2,  boosts); }
+    if character_state.traces.stat_3  { apply_std_trace_effect(&trace_ids.stat_3,  boosts); }
+    if character_state.traces.stat_4  { apply_std_trace_effect(&trace_ids.stat_4,  boosts); }
+    if character_state.traces.stat_5  { apply_std_trace_effect(&trace_ids.stat_5,  boosts); }
+    if character_state.traces.stat_6  { apply_std_trace_effect(&trace_ids.stat_6,  boosts); }
+    if character_state.traces.stat_7  { apply_std_trace_effect(&trace_ids.stat_7,  boosts); }
+    if character_state.traces.stat_8  { apply_std_trace_effect(&trace_ids.stat_8,  boosts); }
+    if character_state.traces.stat_9  { apply_std_trace_effect(&trace_ids.stat_9,  boosts); }
+    if character_state.traces.stat_10 { apply_std_trace_effect(&trace_ids.stat_10, boosts); }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
