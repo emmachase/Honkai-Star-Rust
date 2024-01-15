@@ -2,7 +2,7 @@ use serde_tuple::Deserialize_tuple;
 
 use crate::{damage::{Boosts, calculate_damage_with_avg_crits, EnemyConfig}, promotions::CharacterState, data::{use_character, use_character_skill}, data_mappings::Character, util::deserialize::deserialize_u8};
 
-use super::common::{CharacterKit, StatColumn, StatColumnType};
+use super::common::{CharacterKit, StatColumnType};
 
 pub struct Jingliu {
     pub descriptions: JingliuDescriptions,
@@ -127,57 +127,57 @@ impl CharacterKit for Jingliu {
         }
     }
 
-    fn get_stat_columns(&self) -> Vec<StatColumn<Jingliu>> {
+    fn get_stat_columns(&self) -> Vec<StatColumnType> {
         return vec![
-            StatColumn {
-                stat_type: StatColumnType::BasicDamage,
-                computer: |this, character_state, character_stats, boosts, enemy_config| {
-                    if this.enhanced_state {
-                        return 0.0; // Basic is not available in enhanced state
-                    }
+            StatColumnType::BasicDamage,
+            StatColumnType::SkillDamage,
+            StatColumnType::UltimateDamage
+        ]
+    }
 
-                    let desc = this.descriptions.basic[character_state.skills.basic as usize];
-                    let base_dmg = desc.atk_pct * character_stats.atk(boosts);
+    fn compute_stat_column(&self, column_type: StatColumnType, character_state: &CharacterState, character_stats: &crate::damage::CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64 {
+        match column_type {
+            StatColumnType::BasicDamage => {
+                if self.enhanced_state {
+                    return 0.0; // Basic is not available in enhanced state
+                }
+
+                let desc = self.descriptions.basic[character_state.skills.basic as usize];
+                let base_dmg = desc.atk_pct * character_stats.atk(boosts);
+                return calculate_damage_with_avg_crits(base_dmg, character_stats, enemy_config, boosts);
+            },
+            StatColumnType::SkillDamage => {
+                let atk = character_stats.atk(boosts);
+
+                if self.enhanced_state {
+                    let desc = self.descriptions.enhanced_skill[character_state.skills.skill as usize];
+
+                    let base_main_dmg = desc.atk_pct_main * atk;
+                    let main_dmg = calculate_damage_with_avg_crits(base_main_dmg, character_stats, enemy_config, boosts);
+                    
+                    let base_adj_dmg = desc.atk_pct_adj * atk;
+                    let adj_dmg = calculate_damage_with_avg_crits(base_adj_dmg, character_stats, enemy_config, boosts);
+
+                    return main_dmg + adj_dmg * (enemy_config.count - 1).min(2) as f64;
+                } else {
+                    let desc = self.descriptions.normal_skill[character_state.skills.skill as usize];
+                    let base_dmg = desc.atk_pct * atk;
                     return calculate_damage_with_avg_crits(base_dmg, character_stats, enemy_config, boosts);
                 }
             },
-            StatColumn {
-                stat_type: StatColumnType::SkillDamage,
-                computer: |this, character_state, character_stats, boosts, enemy_config| {
-                    let atk = character_stats.atk(boosts);
+            StatColumnType::UltimateDamage => {
+                let atk = character_stats.atk(&boosts);
 
-                    if this.enhanced_state {
-                        let desc = this.descriptions.enhanced_skill[character_state.skills.skill as usize];
+                let desc = self.descriptions.ultimate[character_state.skills.ult as usize];
+                let base_main_dmg = desc.atk_pct_main * atk;
+                let main_dmg = calculate_damage_with_avg_crits(base_main_dmg, character_stats, enemy_config, &boosts);
+                
+                let base_adj_dmg = desc.atk_pct_adj * atk;
+                let adj_dmg = calculate_damage_with_avg_crits(base_adj_dmg, character_stats, enemy_config, &boosts);
 
-                        let base_main_dmg = desc.atk_pct_main * atk;
-                        let main_dmg = calculate_damage_with_avg_crits(base_main_dmg, character_stats, enemy_config, boosts);
-                        
-                        let base_adj_dmg = desc.atk_pct_adj * atk;
-                        let adj_dmg = calculate_damage_with_avg_crits(base_adj_dmg, character_stats, enemy_config, boosts);
-
-                        return main_dmg + adj_dmg * (enemy_config.count - 1).min(2) as f64;
-                    } else {
-                        let desc = this.descriptions.normal_skill[character_state.skills.skill as usize];
-                        let base_dmg = desc.atk_pct * atk;
-                        return calculate_damage_with_avg_crits(base_dmg, character_stats, enemy_config, boosts);
-                    }
-                }
+                return main_dmg + adj_dmg * (enemy_config.count - 1).min(2) as f64;
             },
-            StatColumn {
-                stat_type: StatColumnType::UltimateDamage,
-                computer: |this, character_state, character_stats, boosts, enemy_config| {
-                    let atk = character_stats.atk(&boosts);
-
-                    let desc = this.descriptions.ultimate[character_state.skills.ult as usize];
-                    let base_main_dmg = desc.atk_pct_main * atk;
-                    let main_dmg = calculate_damage_with_avg_crits(base_main_dmg, character_stats, enemy_config, &boosts);
-                    
-                    let base_adj_dmg = desc.atk_pct_adj * atk;
-                    let adj_dmg = calculate_damage_with_avg_crits(base_adj_dmg, character_stats, enemy_config, &boosts);
-
-                    return main_dmg + adj_dmg * (enemy_config.count - 1).min(2) as f64;
-                }
-            },
-        ]
+            _ => panic!("Invalid stat column type for Jingliu: {:?}", column_type),
+        }
     }
 }

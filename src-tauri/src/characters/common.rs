@@ -116,14 +116,15 @@ impl StatColumnType {
     }
 }
 
-pub struct StatColumn<Kit> {
-    pub stat_type: StatColumnType,
-    pub computer: fn(&Kit, &CharacterState, &CharacterStats, &Boosts, &EnemyConfig) -> f64,
-}
+// pub struct StatColumn<Kit: ?Sized> {
+//     pub stat_type: StatColumnType,
+//     pub computer: fn(&Kit, &CharacterState, &CharacterStats, &Boosts, &EnemyConfig) -> f64,
+// }
 
 pub trait CharacterKit {
     fn apply_static_passives(&self, enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts);
     fn apply_conditional_passives(&self, enemy_config: &EnemyConfig, stat_type: StatColumnType, character_state: &CharacterState, boosts: &mut Boosts);
 
-    fn get_stat_columns(&self) -> Vec<StatColumn<Self>> where Self: Sized;
+    fn get_stat_columns(&self) -> Vec<StatColumnType>;
+    fn compute_stat_column(&self, column_type: StatColumnType, character_state: &CharacterState, character_stats: &CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64;
 }

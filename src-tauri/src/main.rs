@@ -3,6 +3,8 @@
 #![allow(dead_code)] // TODO: remove
 
 use characters::common::CharacterKit;
+use damage::CharacterStats;
+use data::CharacterDescriptor;
 
 use crate::{data::use_character, damage::{Boosts, Level, Ascension, EnemyConfig}, data_mappings::{Character, LightCone}, promotions::{CharacterState, CharacterSkillState, CharacterTraceState, calculate_character_base_stats, LightConeState}, characters::{common::apply_minor_trace_effects, jingliu::{Jingliu, JingliuDescriptions}}, lightcones::{i_shall_be_my_own_sword::{IShallBeMyOwnSword, IShallBeMyOwnSwordDesc}, common::LightConeKit}};
 
@@ -20,7 +22,7 @@ mod lightcones;
 #[tauri::command]
 #[specta::specta]
 fn greet(name: &str) -> String {
-    let mut boosts = Boosts::default();
+    // let mut boosts = Boosts::default();
 
     // let jingliu = Jingliu {};
     let character_id = Character::Jingliu;
@@ -51,7 +53,6 @@ fn greet(name: &str) -> String {
             stat_10: true,
         }
     };
-    apply_minor_trace_effects(character, &character_state, &mut boosts);
 
     let light_cone_id = LightCone::IShallBeMyOwnSword;
     let light_cone_state = LightConeState {
@@ -59,14 +60,12 @@ fn greet(name: &str) -> String {
         ascension: 6,
         superimposition: 1 - 1,
     };
-    let stats = calculate_character_base_stats((character_id, character_state), Some((light_cone_id, light_cone_state)));
+    let character_stats = calculate_character_base_stats((character_id, character_state), Some((light_cone_id, light_cone_state)));
 
     // TODO: Apply light cone effect properly
     // boosts.crit_dmg += 0.2;
     // boosts.all_type_dmg_boost += 0.14 * 3.0;
     // boosts.def_shred += 0.12;
-
-    boosts.atk_flat += 352.8; // Hands Relic
 
     let kit = Jingliu {
         descriptions: JingliuDescriptions::get(),
@@ -89,19 +88,35 @@ fn greet(name: &str) -> String {
         weakness_broken: false,
     };
 
+    let cols = calculate_cols(
+        (&character, &kit, &character_state, &character_stats), 
+        (&lc_kit, &light_cone_state),
+        &enemy_config
+    );
+
+    format!("No relics: {:?} {:?}", character_stats, cols)
+}
+
+fn calculate_cols(character: (&'static CharacterDescriptor, &dyn CharacterKit, &CharacterState, &CharacterStats), light_cone: (&dyn LightConeKit, &LightConeState), enemy_config: &EnemyConfig) -> Vec<(String, f64)> {
+    let mut boosts = Boosts::default();
+    
+    boosts.atk_flat += 352.8; // Hands Relic TODO: draw the rest of the owl
+
+    let (character, kit, character_state, character_stats) = character;
+    let (lc_kit, light_cone_state) = light_cone;
+    
+    apply_minor_trace_effects(character, &character_state, &mut boosts);
     lc_kit.apply_static_passives(&enemy_config, &light_cone_state, &mut boosts);
     kit.apply_static_passives(&enemy_config, &character_state, &mut boosts);
 
     let cols = kit.get_stat_columns();
-    let cols = cols.iter().map(|c| {
+    cols.iter().map(|&column_type| {
         let mut special_boosts = boosts.clone();
-        lc_kit.apply_conditional_passives(&enemy_config, c.stat_type, &light_cone_state, &mut special_boosts);
-        kit.apply_conditional_passives(&enemy_config, c.stat_type, &character_state, &mut special_boosts);
+        lc_kit.apply_conditional_passives(&enemy_config, column_type, &light_cone_state, &mut special_boosts);
+        kit.apply_conditional_passives(&enemy_config, column_type, &character_state, &mut special_boosts);
 
-        (c.stat_type.to_name(), (c.computer)(&kit, &character_state, &stats, &special_boosts, &enemy_config))
-    }).collect::<Vec<_>>();
-
-    format!("No relics: {:?} {:?}", stats, cols)
+        (column_type.to_name().to_owned(), kit.compute_stat_column(column_type, &character_state, &character_stats, &special_boosts, &enemy_config))
+    }).collect()
 }
 
 fn main() {
