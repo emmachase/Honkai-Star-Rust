@@ -60,7 +60,7 @@ pub struct Promotions<Spec> {
     pub values: Vec<Spec>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 pub enum Element {
     Physical,
     Fire,

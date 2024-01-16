@@ -1,4 +1,4 @@
-use crate::{data_mappings::Character, data::{use_character, use_character_trace_node, CharacterDescriptor, EffectPropertyType}, damage::{Boosts, EnemyConfig, CharacterStats}, promotions::CharacterState};
+use crate::{data_mappings::Character, data::{use_character, use_character_trace_node, CharacterDescriptor, EffectPropertyType, Element}, damage::{Boosts, EnemyConfig, CharacterStats}, promotions::CharacterState};
 
 #[derive(Debug, Clone)]
 pub struct CharacterTraceIds {
@@ -47,33 +47,38 @@ impl CharacterTraceIds {
     }
 }
 
-fn apply_std_trace_effect(trace_id: &str, boosts: &mut Boosts) {
+fn apply_std_trace_effect(effective_element: Element, trace_id: &str, boosts: &mut Boosts) {
     let trace = use_character_trace_node(trace_id);
     for effect in &trace.levels[0].properties {
-        match effect.property_type {
-            EffectPropertyType::HPDelta                   => boosts.hp_flat += effect.value,
-            EffectPropertyType::AttackDelta               => boosts.atk_flat += effect.value,
-            EffectPropertyType::DefenceDelta              => boosts.def_flat += effect.value,
-            EffectPropertyType::SpeedDelta                => boosts.spd += effect.value,
-            EffectPropertyType::HPAddedRatio              => boosts.hp_pct += effect.value,
-            EffectPropertyType::AttackAddedRatio          => boosts.atk_pct += effect.value,
-            EffectPropertyType::DefenceAddedRatio         => boosts.def_pct += effect.value,
-            EffectPropertyType::CriticalChanceBase        => boosts.crit_rate += effect.value,
-            EffectPropertyType::CriticalDamageBase        => boosts.crit_dmg += effect.value,
-            EffectPropertyType::HealRatioBase             => boosts.outgoing_healing_boost += effect.value,
-            EffectPropertyType::StatusProbabilityBase     => boosts.effect_hit_rate += effect.value,
-            EffectPropertyType::PhysicalAddedRatio         |
-            EffectPropertyType::FireAddedRatio             |
-            EffectPropertyType::IceAddedRatio              |
-            EffectPropertyType::ThunderAddedRatio          |
-            EffectPropertyType::WindAddedRatio             |
-            EffectPropertyType::QuantumAddedRatio          |
-            EffectPropertyType::ImaginaryAddedRatio       => boosts.elemental_dmg_boost += effect.value,
-            EffectPropertyType::AllDamageTypeAddedRatio   => boosts.all_type_dmg_boost += effect.value,
-            EffectPropertyType::BreakDamageAddedRatioBase => boosts.break_effect += effect.value,
-            EffectPropertyType::SPRatioBase               => boosts.energy_recharge += effect.value,
-            EffectPropertyType::StatusResistanceBase      => boosts.effect_res += effect.value,
-        }
+        apply_effect_boost(effective_element, effect.property_type, effect.value, boosts);
+    }
+}
+
+pub fn apply_effect_boost(effective_element: Element, effect: EffectPropertyType, value: f64, boosts: &mut Boosts) {
+    match effect {
+        EffectPropertyType::HPDelta                   => boosts.hp_flat += value,
+        EffectPropertyType::AttackDelta               => boosts.atk_flat += value,
+        EffectPropertyType::DefenceDelta              => boosts.def_flat += value,
+        EffectPropertyType::SpeedDelta                => boosts.spd += value,
+        EffectPropertyType::HPAddedRatio              => boosts.hp_pct += value,
+        EffectPropertyType::AttackAddedRatio          => boosts.atk_pct += value,
+        EffectPropertyType::DefenceAddedRatio         => boosts.def_pct += value,
+        EffectPropertyType::CriticalChanceBase        => boosts.crit_rate += value,
+        EffectPropertyType::CriticalDamageBase        => boosts.crit_dmg += value,
+        EffectPropertyType::HealRatioBase             => boosts.outgoing_healing_boost += value,
+        EffectPropertyType::StatusProbabilityBase     => boosts.effect_hit_rate += value,
+        EffectPropertyType::BreakDamageAddedRatioBase => boosts.break_effect += value,
+        EffectPropertyType::SPRatioBase               => boosts.energy_recharge += value,
+        EffectPropertyType::StatusResistanceBase      => boosts.effect_res += value,
+
+        EffectPropertyType::AllDamageTypeAddedRatio   => boosts.all_type_dmg_boost += value,
+        EffectPropertyType::PhysicalAddedRatio        => if effective_element == Element::Physical  { boosts.elemental_dmg_boost += value },
+        EffectPropertyType::FireAddedRatio            => if effective_element == Element::Fire      { boosts.elemental_dmg_boost += value },
+        EffectPropertyType::IceAddedRatio             => if effective_element == Element::Ice       { boosts.elemental_dmg_boost += value },
+        EffectPropertyType::ThunderAddedRatio         => if effective_element == Element::Thunder   { boosts.elemental_dmg_boost += value },
+        EffectPropertyType::WindAddedRatio            => if effective_element == Element::Wind      { boosts.elemental_dmg_boost += value },
+        EffectPropertyType::QuantumAddedRatio         => if effective_element == Element::Quantum   { boosts.elemental_dmg_boost += value },
+        EffectPropertyType::ImaginaryAddedRatio       => if effective_element == Element::Imaginary { boosts.elemental_dmg_boost += value },
     }
 }
 
@@ -83,16 +88,17 @@ pub fn apply_minor_trace_effects(character: &CharacterDescriptor, character_stat
     // Major traces are applied in the character kit, since they are character-specific
     // But minor traces can be done automatically
 
-    if character_state.traces.stat_1  { apply_std_trace_effect(&trace_ids.stat_1,  boosts); }
-    if character_state.traces.stat_2  { apply_std_trace_effect(&trace_ids.stat_2,  boosts); }
-    if character_state.traces.stat_3  { apply_std_trace_effect(&trace_ids.stat_3,  boosts); }
-    if character_state.traces.stat_4  { apply_std_trace_effect(&trace_ids.stat_4,  boosts); }
-    if character_state.traces.stat_5  { apply_std_trace_effect(&trace_ids.stat_5,  boosts); }
-    if character_state.traces.stat_6  { apply_std_trace_effect(&trace_ids.stat_6,  boosts); }
-    if character_state.traces.stat_7  { apply_std_trace_effect(&trace_ids.stat_7,  boosts); }
-    if character_state.traces.stat_8  { apply_std_trace_effect(&trace_ids.stat_8,  boosts); }
-    if character_state.traces.stat_9  { apply_std_trace_effect(&trace_ids.stat_9,  boosts); }
-    if character_state.traces.stat_10 { apply_std_trace_effect(&trace_ids.stat_10, boosts); }
+    let el = character.element;
+    if character_state.traces.stat_1  { apply_std_trace_effect(el, &trace_ids.stat_1,  boosts); }
+    if character_state.traces.stat_2  { apply_std_trace_effect(el, &trace_ids.stat_2,  boosts); }
+    if character_state.traces.stat_3  { apply_std_trace_effect(el, &trace_ids.stat_3,  boosts); }
+    if character_state.traces.stat_4  { apply_std_trace_effect(el, &trace_ids.stat_4,  boosts); }
+    if character_state.traces.stat_5  { apply_std_trace_effect(el, &trace_ids.stat_5,  boosts); }
+    if character_state.traces.stat_6  { apply_std_trace_effect(el, &trace_ids.stat_6,  boosts); }
+    if character_state.traces.stat_7  { apply_std_trace_effect(el, &trace_ids.stat_7,  boosts); }
+    if character_state.traces.stat_8  { apply_std_trace_effect(el, &trace_ids.stat_8,  boosts); }
+    if character_state.traces.stat_9  { apply_std_trace_effect(el, &trace_ids.stat_9,  boosts); }
+    if character_state.traces.stat_10 { apply_std_trace_effect(el, &trace_ids.stat_10, boosts); }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

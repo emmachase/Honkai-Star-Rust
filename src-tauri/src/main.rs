@@ -6,7 +6,9 @@ use std::{thread, sync::Arc};
 
 use characters::common::CharacterKit;
 use damage::CharacterStats;
-use data::CharacterDescriptor;
+use data::{CharacterDescriptor, RelicSlot, EffectPropertyType};
+use data_mappings::RelicSet;
+use relics::common::Relic;
 
 use crate::{data::use_character, damage::{Boosts, Level, Ascension, EnemyConfig}, data_mappings::{Character, LightCone}, promotions::{CharacterState, CharacterSkillState, CharacterTraceState, calculate_character_base_stats, LightConeState}, characters::{common::apply_minor_trace_effects, jingliu::{Jingliu, JingliuDescriptions}}, lightcones::{i_shall_be_my_own_sword::{IShallBeMyOwnSword, IShallBeMyOwnSwordDesc}, common::LightConeKit}};
 
@@ -19,6 +21,7 @@ mod util;
 mod promotions;
 mod characters;
 mod lightcones;
+mod relics;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -127,7 +130,19 @@ fn calculate_cols(
 ) -> Vec<(String, f64)> {
     let mut boosts = Boosts::default();
     
-    boosts.atk_flat += 352.8; // Hands Relic TODO: draw the rest of the owl
+    let hands = Relic {
+        set: RelicSet::GeniusOfBrilliantStars,
+        slot: RelicSlot::Hands,
+        level: 15,
+        main_stat: (EffectPropertyType::AttackDelta, 352.8),
+        sub_stats: vec![
+            (EffectPropertyType::HPDelta, 80.0),
+            (EffectPropertyType::AttackAddedRatio, 0.06)
+        ]
+    };
+    // boosts.atk_flat += 352.8; // Hands Relic TODO: draw the rest of the owl
+    let effective_element = params.character.element;
+    hands.apply(effective_element, &mut boosts);
     
     apply_minor_trace_effects(&params.character, &params.character_state, &mut boosts);
     params.light_cone_kit.apply_static_passives(&params.enemy_config, &params.light_cone_state, &mut boosts);
