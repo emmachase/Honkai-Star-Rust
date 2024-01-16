@@ -1,1 +1,2 @@
 - skill levels should be 0-indexed (need to convert from 1-indexed when reading from scanner)
+- superimposition should be 0-indexed (need to convert from 1-indexed when reading from scanner)
