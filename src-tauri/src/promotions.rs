@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{data_mappings::{Character, LightCone}, damage::{Level, Ascension, CharacterStats, Eidolon, Superimposition}, data::{Promotions, PromotionStepSpec, use_character_promotions, use_character, use_light_cone_promotions, CharacterDescriptor, use_character_trace_node, EffectPropertyType}, characters::common::CharacterTraceIds};
+use crate::{data_mappings::{Character, LightCone}, damage::{Level, Ascension, CharacterStats, Eidolon, Superimposition}, data::{Promotions, PromotionStepSpec, use_character_promotions, use_character, use_light_cone_promotions, CharacterDescriptor, use_character_trace_node, EffectPropertyType}, characters::CharacterTraceIds};
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy)]
 pub struct CharacterSkillState {

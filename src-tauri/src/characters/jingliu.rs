@@ -2,7 +2,7 @@ use serde_tuple::Deserialize_tuple;
 
 use crate::{damage::{Boosts, calculate_damage_with_avg_crits, EnemyConfig}, promotions::CharacterState, data::{use_character, use_character_skill}, data_mappings::Character, util::deserialize::deserialize_u8};
 
-use super::common::{CharacterKit, StatColumnType};
+use super::{CharacterKit, StatColumnType};
 
 pub struct Jingliu {
     pub descriptions: JingliuDescriptions,

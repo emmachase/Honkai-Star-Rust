@@ -4,13 +4,13 @@
 
 use std::{thread, sync::Arc};
 
-use characters::common::CharacterKit;
+use characters::CharacterKit;
 use damage::CharacterStats;
 use data::{CharacterDescriptor, RelicSlot, EffectPropertyType};
 use data_mappings::RelicSet;
-use relics::common::Relic;
+use relics::Relic;
 
-use crate::{data::use_character, damage::{Boosts, Level, Ascension, EnemyConfig}, data_mappings::{Character, LightCone}, promotions::{CharacterState, CharacterSkillState, CharacterTraceState, calculate_character_base_stats, LightConeState}, characters::{common::apply_minor_trace_effects, jingliu::{Jingliu, JingliuDescriptions}}, lightcones::{i_shall_be_my_own_sword::{IShallBeMyOwnSword, IShallBeMyOwnSwordDesc}, common::LightConeKit}};
+use crate::{data::use_character, damage::{Boosts, Level, Ascension, EnemyConfig}, data_mappings::{Character, LightCone}, promotions::{CharacterState, CharacterSkillState, CharacterTraceState, calculate_character_base_stats, LightConeState}, characters::{apply_minor_trace_effects, jingliu::{Jingliu, JingliuDescriptions}}, lightcones::{i_shall_be_my_own_sword::{IShallBeMyOwnSword, IShallBeMyOwnSwordDesc}, LightConeKit}};
 
 #[path = "data.gen.rs"]
 mod data_mappings;

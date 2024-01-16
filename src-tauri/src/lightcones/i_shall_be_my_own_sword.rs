@@ -1,8 +1,8 @@
 use serde_tuple::Deserialize_tuple;
 
-use crate::{promotions::LightConeState, damage::{Boosts, EnemyConfig}, characters::common::StatColumnType, data::use_light_cone_effects, data_mappings::LightCone, util::deserialize::deserialize_u8};
+use crate::{promotions::LightConeState, damage::{Boosts, EnemyConfig}, characters::StatColumnType, data::use_light_cone_effects, data_mappings::LightCone, util::deserialize::deserialize_u8};
 
-use super::common::LightConeKit;
+use super::LightConeKit;
 
 pub struct IShallBeMyOwnSword {
     pub descriptions: Vec<IShallBeMyOwnSwordDesc>,
