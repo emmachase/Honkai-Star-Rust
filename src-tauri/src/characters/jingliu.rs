@@ -9,6 +9,9 @@ pub struct Jingliu {
 
     pub enhanced_state: bool, // Spectral Transmigration
     pub hp_drain_pct: f64, // 0-1, how much of ATK% cap is available
+
+    pub e1_crit_dmg: bool,
+    pub e2_skill_buff: bool,
 }
 
 /**
@@ -114,32 +117,62 @@ impl CharacterKit for Jingliu {
 
             let talent = self.descriptions.talent[character_state.skills.talent as usize];
 
+            let mut atk_pct_cap = talent.atk_pct_cap;
+            if character_state.eidolon >= 4 {
+                atk_pct_cap += 0.3;
+            }
+
             boosts.crit_rate += talent.crit_rate_pct;
-            boosts.atk_pct += talent.atk_pct_cap * self.hp_drain_pct;
+            boosts.atk_pct += atk_pct_cap * self.hp_drain_pct;
+
+            if character_state.eidolon >= 6 {
+                boosts.crit_dmg += 0.5;
+            }
+        }
+
+        if character_state.eidolon >= 1 && self.e1_crit_dmg {
+            boosts.crit_dmg += 0.24;
         }
     }
 
     fn apply_conditional_passives(&self, _enemy_config: &EnemyConfig, stat_type: StatColumnType, character_state: &CharacterState, boosts: &mut Boosts) {
-        if stat_type == StatColumnType::UltimateDamage {
-            if self.enhanced_state && character_state.traces.ability_3 {
-                boosts.all_type_dmg_boost += 0.2;
+        match stat_type {
+            StatColumnType::SkillDamage => {
+                if self.enhanced_state && character_state.eidolon >= 2 && self.e2_skill_buff {
+                    boosts.all_type_dmg_boost += 0.8;
+                }
             }
+
+            StatColumnType::UltimateDamage => {
+                if self.enhanced_state && character_state.traces.ability_3 {
+                    boosts.all_type_dmg_boost += 0.2;
+                }
+            },
+
+            _ => {},
         }
     }
 
     fn get_stat_columns(&self) -> Vec<StatColumnType> {
-        return vec![
-            StatColumnType::BasicDamage,
-            StatColumnType::SkillDamage,
-            StatColumnType::UltimateDamage
-        ]
+        return if self.enhanced_state {
+            vec![
+                StatColumnType::SkillDamage,
+                StatColumnType::UltimateDamage
+            ]
+        } else {
+            vec![
+                StatColumnType::BasicDamage,
+                StatColumnType::SkillDamage,
+                StatColumnType::UltimateDamage
+            ]
+        }
     }
 
     fn compute_stat_column(&self, column_type: StatColumnType, character_state: &CharacterState, character_stats: &crate::damage::CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64 {
         match column_type {
             StatColumnType::BasicDamage => {
                 if self.enhanced_state {
-                    return 0.0; // Basic is not available in enhanced state
+                    unreachable!("Basic is not available in enhanced state")
                 }
 
                 let desc = self.descriptions.basic[character_state.skills.basic as usize];
@@ -152,7 +185,11 @@ impl CharacterKit for Jingliu {
                 if self.enhanced_state {
                     let desc = self.descriptions.enhanced_skill[character_state.skills.skill as usize];
 
-                    let base_main_dmg = desc.atk_pct_main * atk;
+                    let mut base_main_dmg = desc.atk_pct_main * atk;
+                    if character_state.eidolon >= 1 && enemy_config.count == 1 {
+                        base_main_dmg += atk;
+                    }
+
                     let main_dmg = calculate_damage_with_avg_crits(base_main_dmg, character_stats, enemy_config, boosts);
                     
                     let base_adj_dmg = desc.atk_pct_adj * atk;
@@ -169,7 +206,12 @@ impl CharacterKit for Jingliu {
                 let atk = character_stats.atk(&boosts);
 
                 let desc = self.descriptions.ultimate[character_state.skills.ult as usize];
-                let base_main_dmg = desc.atk_pct_main * atk;
+
+                let mut base_main_dmg = desc.atk_pct_main * atk;
+                if character_state.eidolon >= 1 && enemy_config.count == 1 {
+                    base_main_dmg += atk;
+                }
+
                 let main_dmg = calculate_damage_with_avg_crits(base_main_dmg, character_stats, enemy_config, &boosts);
                 
                 let base_adj_dmg = desc.atk_pct_adj * atk;

@@ -46,7 +46,7 @@ impl CharacterStats {
     }
 
     pub fn crit_rate(&self, boosts: &Boosts) -> f64 {
-        return self.crit_rate + boosts.crit_rate;
+        return (self.crit_rate + boosts.crit_rate).min(1.0);
     }
 
     pub fn crit_dmg(&self, boosts: &Boosts) -> f64 {
@@ -183,8 +183,8 @@ pub fn calculate_damage_with_avg_crits(
      *  avg = x * (CR + CR*CD + 1 - CR)
      *  avg = x * (1 + CR*CD)
      */
-    let boosted_crit_rate = (character_stats.crit_rate + boosts.crit_rate).min(1.0);
-    let boosted_crit_dmg = character_stats.crit_dmg + boosts.crit_dmg;
+    let boosted_crit_rate = character_stats.crit_rate(boosts);
+    let boosted_crit_dmg = character_stats.crit_dmg(boosts);
     let crit_multiplier = 1.0 + boosted_crit_rate * boosted_crit_dmg;
 
     let common_multiplier = calculate_common_multiplier(character_stats, enemy_config, boosts);

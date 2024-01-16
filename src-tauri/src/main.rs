@@ -31,13 +31,13 @@ fn greet(name: &str) -> String {
     let character = use_character(character_id);
     let character_state = CharacterState {
         ascension: 6,
-        eidolon: 0,
+        eidolon: 6,
         level: 80,
         skills: CharacterSkillState {
-            basic: 6 - 1,
-            skill: 10 - 1,
-            ult: 10 - 1,
-            talent: 10 - 1,
+            basic: 7 - 1,
+            skill: 12 - 1,
+            ult: 12 - 1,
+            talent: 12 - 1,
         },
         traces: CharacterTraceState {
             ability_1: true,
@@ -74,6 +74,9 @@ fn greet(name: &str) -> String {
 
         enhanced_state: true,
         hp_drain_pct: 1.0,
+
+        e1_crit_dmg: true,
+        e2_skill_buff: true,
     };
 
     let lc_kit = IShallBeMyOwnSword {
@@ -103,7 +106,7 @@ fn greet(name: &str) -> String {
         }
     );
 
-    format!("No relics: {:?} {:?}", character_stats, cols)
+    format!("eNo relics: {:?} {:?}", character_stats, cols)
 }
 
 #[derive(Clone)]
