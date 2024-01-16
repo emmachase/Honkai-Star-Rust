@@ -41,6 +41,7 @@ pub struct CharacterState {
 pub struct LightConeState {
     pub level: Level,
     pub ascension: Ascension,
+    // Superimposition should be 0-indexed (need to convert from 1-indexed when reading from scanner)
     pub superimposition: Superimposition,
 }
 
