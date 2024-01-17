@@ -109,7 +109,11 @@ impl JingliuDescriptions {
 // TODO: get descs from type instead of order
 
 impl CharacterKit for Jingliu {
-    fn apply_static_passives(&self, _enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts) {
+    fn apply_base_passives(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {
+        // No base passives
+    }
+
+    fn apply_base_combat_passives(&self, _enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts) {
         if self.enhanced_state {
             if character_state.traces.ability_1 {
                 boosts.effect_res += 0.35; // TODO: Do i care about getting this from the desc?
@@ -135,7 +139,11 @@ impl CharacterKit for Jingliu {
         }
     }
 
-    fn apply_conditional_passives(&self, _enemy_config: &EnemyConfig, stat_type: StatColumnType, character_state: &CharacterState, boosts: &mut Boosts) {
+    fn apply_common_conditionals(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {
+        // No conditional passives
+    }
+
+    fn apply_stat_type_conditionals(&self, _enemy_config: &EnemyConfig, stat_type: StatColumnType, character_state: &CharacterState, boosts: &mut Boosts) {
         match stat_type {
             StatColumnType::SkillDamage => {
                 if self.enhanced_state && character_state.eidolon >= 2 && self.e2_skill_buff {

@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 use crate::data::Element;
 
 pub type Level = u8;
@@ -64,6 +66,10 @@ impl CharacterStats {
     pub fn outgoing_healing_boost(&self, boosts: &Boosts) -> f64 {
         return self.outgoing_healing_boost + boosts.outgoing_healing_boost;
     }
+
+    pub fn elemental_dmg_bonus(&self, boosts: &Boosts) -> f64 {
+        return self.elemental_dmg_bonus + boosts.elemental_dmg_boost;
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -105,6 +111,60 @@ pub struct Boosts {
     pub extra_vulnerability: f64,
     pub def_shred: f64, // enemy def_reduction + attacker def_ignore
     pub res_pen: f64,
+}
+
+impl Add for Boosts {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        return Self {
+            hp_flat: self.hp_flat + rhs.hp_flat,
+            hp_pct: self.hp_pct + rhs.hp_pct,
+            atk_flat: self.atk_flat + rhs.atk_flat,
+            atk_pct: self.atk_pct + rhs.atk_pct,
+            def_flat: self.def_flat + rhs.def_flat,
+            def_pct: self.def_pct + rhs.def_pct,
+            
+            spd: self.spd + rhs.spd,
+            effect_res: self.effect_res + rhs.effect_res,
+            effect_hit_rate: self.effect_hit_rate + rhs.effect_hit_rate,
+            crit_rate: self.crit_rate + rhs.crit_rate,
+            crit_dmg: self.crit_dmg + rhs.crit_dmg,
+            break_effect: self.break_effect + rhs.break_effect,
+            energy_recharge: self.energy_recharge + rhs.energy_recharge,
+            outgoing_healing_boost: self.outgoing_healing_boost + rhs.outgoing_healing_boost,
+            elemental_dmg_boost: self.elemental_dmg_boost + rhs.elemental_dmg_boost,
+
+            all_type_dmg_boost: self.all_type_dmg_boost + rhs.all_type_dmg_boost,
+            extra_vulnerability: self.extra_vulnerability + rhs.extra_vulnerability,
+            def_shred: self.def_shred + rhs.def_shred,
+            res_pen: self.res_pen + rhs.res_pen,
+        }
+    }
+}
+
+impl Add<Boosts> for CharacterStats {
+    type Output = CharacterStats;
+
+    fn add(self, rhs: Boosts) -> Self::Output {
+        return Self::Output {
+            level: self.level,
+            ascension: self.ascension,
+            element: self.element,
+
+            hp: self.hp(&rhs),
+            atk: self.atk(&rhs),
+            def: self.def(&rhs),
+            spd: self.spd(&rhs),
+            effect_res: self.effect_res(&rhs),
+            crit_rate: self.crit_rate(&rhs),
+            crit_dmg: self.crit_dmg(&rhs),
+            break_effect: self.break_effect(&rhs),
+            energy_recharge: self.energy_recharge(&rhs),
+            outgoing_healing_boost: self.outgoing_healing_boost(&rhs),
+            elemental_dmg_bonus: self.elemental_dmg_bonus(&rhs) + rhs.all_type_dmg_boost, // TODO: Should we include all_type_dmg_boost here?
+        }
+    }
 }
 
 fn calculate_def_multiplier(

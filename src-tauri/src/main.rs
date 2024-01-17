@@ -122,7 +122,12 @@ fn greet(name: &str) -> String {
                 r.main_stat.0 == EffectPropertyType::SpeedDelta
             )
         ).collect::<Vec<_>>(),
-        all_relics.clone().into_iter().filter(|r| r.slot == RelicSlot::PlanarSphere).collect::<Vec<_>>(),
+        all_relics.clone().into_iter().filter(|r| 
+            r.slot == RelicSlot::PlanarSphere && (
+                r.main_stat.0 == EffectPropertyType::IceAddedRatio ||
+                r.main_stat.0 == EffectPropertyType::AttackAddedRatio
+            )
+        ).collect::<Vec<_>>(),
         all_relics.clone().into_iter().filter(|r| r.slot == RelicSlot::LinkRope).collect::<Vec<_>>(),
     ];
 
@@ -168,8 +173,8 @@ fn calculate_cols(
     // character: (&CharacterDescriptor, &(dyn CharacterKit+Sync), &CharacterState, &CharacterStats), light_cone: (&(dyn LightConeKit+Sync), &LightConeState), enemy_config: &EnemyConfig
     params: CalculatorParameters,
     relics: Vec<Vec<Relic>>,
-) -> (Vec<Relic>, Vec<(String, f64)>) {
-    let mut boosts = Boosts::default();
+) -> (Vec<Relic>, Vec<(String, f64)>, (CharacterStats, CharacterStats)) {
+    let mut base_boosts = Boosts::default();
     
     // let hands = Relic {
     //     set: RelicSet::GeniusOfBrilliantStars,
@@ -184,9 +189,13 @@ fn calculate_cols(
     // boosts.atk_flat += 352.8; // Hands Relic TODO: draw the rest of the owl
     // hands.apply(effective_element, &mut boosts);
 
-    apply_minor_trace_effects(&params.character, &params.character_state, &mut boosts);
-    params.light_cone_kit.apply_static_passives(&params.enemy_config, &params.light_cone_state, &mut boosts);
-    params.character_kit.apply_static_passives(&params.enemy_config, &params.character_state, &mut boosts);
+    apply_minor_trace_effects(&params.character, &params.character_state, &mut base_boosts);
+    params.light_cone_kit.apply_base_passives(&params.enemy_config, &params.light_cone_state, &mut base_boosts);
+    params.character_kit.apply_base_passives(&params.enemy_config, &params.character_state, &mut base_boosts);
+
+    let mut combat_boosts = Boosts::default();
+    params.light_cone_kit.apply_base_combat_passives(&params.enemy_config, &params.light_cone_state, &mut combat_boosts);
+    params.character_kit.apply_base_combat_passives(&params.enemy_config, &params.character_state, &mut combat_boosts);
 
     // for relic in relics.iter() {
     //     relic.apply(effective_element, &mut boosts);
@@ -210,17 +219,21 @@ fn calculate_cols(
             let mut results = vec![];
 
             for relic_perm in relics.permutation_subset(&batches[tid]) {
-                let mut boosts = boosts.clone();
+                let mut base_boosts = base_boosts.clone();
                 for &relic in relic_perm.iter() {
-                    relic.apply(params.character.element, &mut boosts);
+                    relic.apply(params.character.element, &mut base_boosts);
                 }
 
-                let cols: Vec<(String, f64)> = cols.iter().map(|&column_type| {
-                    let mut special_boosts = boosts.clone();
-                    params.light_cone_kit.apply_conditional_passives(&params.enemy_config, column_type, &params.light_cone_state, &mut special_boosts);
-                    params.character_kit.apply_conditional_passives(&params.enemy_config, column_type, &params.character_state, &mut special_boosts);
+                let mut total_combat_boosts = base_boosts + combat_boosts;
+                params.light_cone_kit.apply_common_conditionals(&params.enemy_config, &params.light_cone_state, &mut total_combat_boosts);
+                params.character_kit.apply_common_conditionals(&params.enemy_config, &params.character_state, &mut total_combat_boosts);
 
-                    (column_type.to_name().to_owned(), params.character_kit.compute_stat_column(column_type, &params.character_state, &params.character_stats, &special_boosts, &params.enemy_config))
+                let cols: Vec<(String, f64)> = cols.iter().map(|&column_type| {
+                    let mut skill_boosts = total_combat_boosts.clone();
+                    params.light_cone_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.light_cone_state, &mut skill_boosts);
+                    params.character_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.character_state, &mut skill_boosts);
+
+                    (column_type.to_name().to_owned(), params.character_kit.compute_stat_column(column_type, &params.character_state, &params.character_stats, &skill_boosts, &params.enemy_config))
                 }).collect();
 
                 // if let Some(maxv) = &max {
@@ -237,7 +250,11 @@ fn calculate_cols(
                 // }
 
                 if cols[0].1 > 80000.0 {
-                    results.push((relic_perm.into_iter().map(|x|x.clone()).collect::<Vec<Relic>>(), cols, boosts));
+                    results.push((
+                        relic_perm.into_iter().map(|x|x.clone()).collect::<Vec<Relic>>(), 
+                        cols, 
+                        (params.character_stats + base_boosts, params.character_stats + total_combat_boosts)
+                    ));
                 }
             }
 
@@ -247,6 +264,7 @@ fn calculate_cols(
 
     let mut max: Option<Vec<(String, f64)>> = None;
     let mut max_relics: Option<Vec<Relic>> = None;
+    let mut max_boosts: Option<(CharacterStats, CharacterStats)> = None;
 
     for thread in threads {
         let results = thread.join().unwrap();
@@ -257,12 +275,12 @@ fn calculate_cols(
                 if cols[0].1 > maxv[0].1 {
                     max = Some(cols);
                     max_relics = Some(relic_perm);
-                    // max_boosts = Some(boosts);
+                    max_boosts = Some(boosts);
                 }
             } else {
                 max = Some(cols);
                 max_relics = Some(relic_perm);
-                // max_boosts = Some(boosts);
+                max_boosts = Some(boosts);
             }
         }
     }
@@ -285,10 +303,10 @@ fn calculate_cols(
     //         (column_type.to_name().to_owned(), params.character_kit.compute_stat_column(column_type, &params.character_state, &params.character_stats, &special_boosts, &params.enemy_config), special_boosts)
     //     }).collect();
 
-        
+
     // }
 
-    return (max_relics.unwrap(), max.unwrap());
+    return (max_relics.unwrap(), max.unwrap(), max_boosts.unwrap());
 }
 
 fn main() {

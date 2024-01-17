@@ -33,17 +33,26 @@ impl IShallBeMyOwnSwordDesc {
 }
 
 impl LightConeKit for IShallBeMyOwnSword {
-    fn apply_static_passives(&self, _enemy_config: &EnemyConfig, light_cone_state: &LightConeState, boosts: &mut Boosts) {
+    fn apply_base_passives(&self, _enemy_config: &EnemyConfig, light_cone_state: &LightConeState, boosts: &mut Boosts) {
         let desc = self.descriptions[light_cone_state.superimposition as usize];
 
         boosts.crit_dmg += desc.crit_dmg_pct;
+    }
+
+    fn apply_base_combat_passives(&self, _enemy_config: &EnemyConfig, light_cone_state: &LightConeState, boosts: &mut Boosts) {
+        let desc = self.descriptions[light_cone_state.superimposition as usize];
+
         boosts.all_type_dmg_boost += self.eclipse_stacks as f64 * desc.dmg_per_stack;
         if self.eclipse_stacks == desc.max_stacks {
             boosts.def_shred += desc.def_pen_pct;
         }
     }
 
-    fn apply_conditional_passives(&self, _enemy_config: &EnemyConfig, _stat_type: StatColumnType, _light_cone_state: &LightConeState, _boosts: &mut Boosts) {
+    fn apply_common_conditionals(&self, _enemy_config: &EnemyConfig, _light_cone_state: &LightConeState, _boosts: &mut Boosts) {
         // No conditional passives
+    }
+
+    fn apply_stat_type_conditionals(&self, _enemy_config: &EnemyConfig, _stat_type: StatColumnType, _light_cone_state: &LightConeState, _boosts: &mut Boosts) {
+        // No stat passives
     }
 }
