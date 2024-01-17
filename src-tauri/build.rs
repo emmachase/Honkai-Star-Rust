@@ -9,6 +9,13 @@ struct IdNameDescriptor {
     name: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct IdNameMeta {
+    id: String,
+    name: String,
+    raw_name: String,
+}
+
 const CHARACTERS_JSON: &str = include_str!("./src/data/characters.json");
 const RELIC_SETS_JSON: &str = include_str!("./src/data/relic_sets.json");
 const LIGHT_CONES_JSON: &str = include_str!("./src/data/light_cones.json");
@@ -34,7 +41,7 @@ fn camel_case(s: &str) -> String {
 fn gen_enum(scope: &mut Scope, name: &str, json: &str, name_mapper: fn(&IdNameDescriptor) -> Option<String>) {
     let relic_sets: HashMap<String, IdNameDescriptor> = serde_json::from_str(json).unwrap();
     let mut relic_sets = relic_sets.values()
-        .map(|d| IdNameDescriptor { id: d.id.clone(), name: name_mapper(&d).unwrap_or(camel_case(&d.name)) })
+        .map(|d| IdNameMeta { id: d.id.clone(), name: name_mapper(&d).unwrap_or(camel_case(&d.name)), raw_name: d.name.clone() })
         .collect::<Vec<_>>();
     relic_sets.sort_by(|a, b| a.id.cmp(&b.id));
 
@@ -45,17 +52,32 @@ fn gen_enum(scope: &mut Scope, name: &str, json: &str, name_mapper: fn(&IdNameDe
         relic_enum.new_variant(relic_set.name.clone());
     }
 
-    // Generate to_id() function
-
     let enum_impl = scope.new_impl(name);
-    let to_id_fn = enum_impl.new_fn("to_id").vis("pub const").arg_self().ret("&'static str");
 
-    let mut block = Block::new("match self");
-    for relic_set in &relic_sets {
-        block.line(format!("{}::{} => \"{}\",", name, relic_set.name, relic_set.id));
+    {
+        // Generate to_id() function
+        let to_id_fn = enum_impl.new_fn("to_id").vis("pub const").arg_self().ret("&'static str");
+
+        let mut block = Block::new("match self");
+        for relic_set in &relic_sets {
+            block.line(format!("{}::{} => \"{}\",", name, relic_set.name, relic_set.id));
+        }
+
+        to_id_fn.push_block(block);
     }
 
-    to_id_fn.push_block(block);
+    {
+        // Generate from_name() function
+        let from_name_fn = enum_impl.new_fn("from_name").vis("pub").arg("s", "&str").ret("Option<Self>");
+
+        let mut block = Block::new("match s");
+        for relic_set in &relic_sets {
+            block.line(format!("\"{}\" => Some({}::{}),", relic_set.raw_name, name, relic_set.name));
+        }
+        block.line("_ => None,");
+
+        from_name_fn.push_block(block);
+    }
 }
 
 fn main() {

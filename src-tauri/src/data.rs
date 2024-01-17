@@ -117,7 +117,7 @@ pub struct RelicSetEffects {
     pub four_piece: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 pub enum EffectPropertyType {
     HPDelta,
     AttackDelta,
@@ -145,6 +145,18 @@ pub enum EffectPropertyType {
     BreakDamageAddedRatioBase,
     SPRatioBase,
     StatusResistanceBase,
+}
+
+impl EffectPropertyType {
+    pub fn is_pct(&self) -> bool {
+        match self {
+            EffectPropertyType::HPDelta      |
+            EffectPropertyType::AttackDelta  |
+            EffectPropertyType::DefenceDelta |
+            EffectPropertyType::SpeedDelta => false,
+            _ => true
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -318,7 +330,7 @@ pub fn use_relic_set(relic_set: RelicSet) -> &'static RelicSetDescriptor {
     return &RELIC_SETS[relic_set.to_id()];
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 pub enum RelicSlot {
     Head         = 1,
     Hands        = 2,

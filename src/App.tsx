@@ -4,6 +4,7 @@ import { commands } from "./bindings.gen";
 import { SideNav, SideNavButton } from "./components/SideNav";
 import Beaker from "@spectrum-icons/workflow/Beaker";
 import PeopleGroup from "@spectrum-icons/workflow/PeopleGroup";
+import { MultiComboBox } from "./components/MultiComboBox";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
@@ -54,6 +55,7 @@ function App() {
             <Button variant="cta" onPress={() => greet()}>Greet</Button>
           </Flex>
           <p>{greetMsg}</p>
+          <MultiComboBox label="Test" />
         </View>
       </Grid>
       
