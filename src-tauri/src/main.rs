@@ -2,17 +2,17 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![allow(dead_code)] // TODO: remove
 
-use std::mem::size_of;
 use std::{thread, sync::Arc};
 
 use characters::CharacterKit;
 use damage::CharacterStats;
 use data::{CharacterDescriptor, RelicSlot, EffectPropertyType};
 use data_mappings::RelicSet;
-use relics::{Relic, RelicStat};
+use relics::{Relic, RelicSetKit, ConditionalRelicSetEffects, RelicSetKitParams};
 
 use crate::relics::Permute;
-use crate::{data::use_character, damage::{Boosts, Level, Ascension, EnemyConfig}, data_mappings::{Character, LightCone}, promotions::{CharacterState, CharacterSkillState, CharacterTraceState, calculate_character_base_stats, LightConeState}, characters::{apply_minor_trace_effects, jingliu::{Jingliu, JingliuDescriptions}}, lightcones::{i_shall_be_my_own_sword::{IShallBeMyOwnSword, IShallBeMyOwnSwordDesc}, LightConeKit}, scans::TEST_SCAN};
+use crate::scans::TEST_SCAN;
+use crate::{data::use_character, damage::{Boosts, EnemyConfig}, data_mappings::{Character, LightCone}, promotions::{CharacterState, CharacterSkillState, CharacterTraceState, calculate_character_base_stats, LightConeState}, characters::{apply_minor_trace_effects, jingliu::{Jingliu, JingliuDescriptions}}, lightcones::{i_shall_be_my_own_sword::{IShallBeMyOwnSword, IShallBeMyOwnSwordDesc}, LightConeKit}};
 
 #[path = "data.gen.rs"]
 mod data_mappings;
@@ -29,7 +29,7 @@ mod relics;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 #[specta::specta]
-fn greet(name: &str) -> String {
+fn greet(_name: &str) -> String {
     // let mut boosts = Boosts::default();
 
     // let jingliu = Jingliu {};
@@ -90,7 +90,7 @@ fn greet(name: &str) -> String {
         eclipse_stacks: 3,
     };
 
-    let mut enemy_config = EnemyConfig {
+    let enemy_config = EnemyConfig {
         count: 1,
         level: 95,
     
@@ -148,6 +148,7 @@ fn greet(name: &str) -> String {
             light_cone_kit: Arc::new(lc_kit),
             light_cone_state,
             enemy_config,
+            relic_conditionals: ConditionalRelicSetEffects::default(),
         },
         relics_by_slot.clone()
     );
@@ -167,6 +168,7 @@ struct CalculatorParameters {
     light_cone_kit: Arc<dyn LightConeKit+Sync+Send>,
     light_cone_state: LightConeState,
     enemy_config: EnemyConfig,
+    relic_conditionals: ConditionalRelicSetEffects
 }
 
 fn calculate_cols(
@@ -217,21 +219,78 @@ fn calculate_cols(
             // let mut max_boosts: Option<Boosts> = None;
 
             let mut results = vec![];
+            results.reserve(batches[tid].size());
 
-            for relic_perm in relics.permutation_subset(&batches[tid]) {
+            for relic_perm in relics.enumerated_permutation_subset(&batches[tid]) {
                 let mut base_boosts = base_boosts.clone();
-                for &relic in relic_perm.iter() {
+
+                // TODO: Test if using a static map is faster
+                // let mut sets = HashMap::new();
+                // sets.reserve(relic_perm.len()); // Does this micro-optimization even matter?
+
+                // let mut active_sets = vec![];
+
+                // for &relic in relic_perm.iter() {
+                //     relic.apply(params.character.element, &mut base_boosts);
+                //     let p = *sets.entry(relic.set).and_modify(|x| *x += 1).or_insert(1);
+                //     if p == 2 {
+                //         if let Some(effect) = relic.set.get_2p_effect() { active_sets.push(effect); }
+                //     } else if p == 4 {
+                //         if let Some(effect) = relic.set.get_4p_effect() { active_sets.push(effect); }
+                //     }
+                // }
+                let mut sets = [0u8; RelicSet::COUNT];
+                let mut active_sets = [None, None, None];
+                let mut set_index = 0;
+                for (&ref relic, _) in relic_perm.iter() {
                     relic.apply(params.character.element, &mut base_boosts);
+
+                    sets[relic.set as usize] += 1;
+                    let p = sets[relic.set as usize];
+                    
+                    if p == 2 {
+                        if let Some(effect) = relic.set.get_2p_effect() { 
+                            active_sets[set_index] = Some(effect); 
+                            set_index += 1;
+                        }
+                    } else if p == 4 {
+                        if let Some(effect) = relic.set.get_4p_effect() { 
+                            active_sets[set_index] = Some(effect); 
+                            set_index += 1;
+                        }
+                    }
                 }
+
+                active_sets.apply_base_passives(RelicSetKitParams {
+                    enemy_config: &params.enemy_config, 
+                    conditionals: &params.relic_conditionals,
+                    character_stats: &params.character_stats, 
+                    character_element: params.character.element, 
+                    boosts: &mut base_boosts,
+                });
 
                 let mut total_combat_boosts = base_boosts + combat_boosts;
                 params.light_cone_kit.apply_common_conditionals(&params.enemy_config, &params.light_cone_state, &mut total_combat_boosts);
                 params.character_kit.apply_common_conditionals(&params.enemy_config, &params.character_state, &mut total_combat_boosts);
+                active_sets.apply_common_conditionals(RelicSetKitParams {
+                    enemy_config: &params.enemy_config, 
+                    conditionals: &params.relic_conditionals,
+                    character_stats: &params.character_stats, 
+                    character_element: params.character.element, 
+                    boosts: &mut total_combat_boosts,
+                });
 
                 let cols: Vec<(String, f64)> = cols.iter().map(|&column_type| {
                     let mut skill_boosts = total_combat_boosts.clone();
                     params.light_cone_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.light_cone_state, &mut skill_boosts);
                     params.character_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.character_state, &mut skill_boosts);
+                    active_sets.apply_stat_type_conditionals(RelicSetKitParams {
+                        enemy_config: &params.enemy_config, 
+                        conditionals: &params.relic_conditionals,
+                        character_stats: &params.character_stats, 
+                        character_element: params.character.element, 
+                        boosts: &mut skill_boosts,
+                    }, column_type);
 
                     (column_type.to_name().to_owned(), params.character_kit.compute_stat_column(column_type, &params.character_state, &params.character_stats, &skill_boosts, &params.enemy_config))
                 }).collect();
@@ -249,13 +308,14 @@ fn calculate_cols(
                 //     // max_boosts = Some(boosts);
                 // }
 
-                if cols[0].1 > 80000.0 {
-                    results.push((
-                        relic_perm.into_iter().map(|x|x.clone()).collect::<Vec<Relic>>(), 
-                        cols, 
-                        (params.character_stats + base_boosts, params.character_stats + total_combat_boosts)
-                    ));
-                }
+                // if cols[0].1 > 80000.0 {
+                results.push((
+                    relic_perm.into_iter().map(|(_, i)| i).collect::<Vec<usize>>(), 
+                    // relic_perm.into_iter().map(|x|)
+                    cols, 
+                    (params.character_stats + base_boosts, params.character_stats + total_combat_boosts)
+                ));
+                // }
             }
 
             return results;
@@ -270,16 +330,18 @@ fn calculate_cols(
         let results = thread.join().unwrap();
 
         for (relic_perm, cols, boosts) in results {
+            let resolved_relics = relic_perm.into_iter().enumerate().map(|(i, j)| relics[i][j].clone()).collect::<Vec<_>>();
+
             if let Some(maxv) = &max {
                 // for (i, (name, value)) in cols.iter().enumerate() {
                 if cols[0].1 > maxv[0].1 {
                     max = Some(cols);
-                    max_relics = Some(relic_perm);
+                    max_relics = Some(resolved_relics);
                     max_boosts = Some(boosts);
                 }
             } else {
                 max = Some(cols);
-                max_relics = Some(relic_perm);
+                max_relics = Some(resolved_relics);
                 max_boosts = Some(boosts);
             }
         }

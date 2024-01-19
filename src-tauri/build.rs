@@ -55,6 +55,9 @@ fn gen_enum(scope: &mut Scope, name: &str, json: &str, name_mapper: fn(&IdNameDe
     let enum_impl = scope.new_impl(name);
 
     {
+        // Generate const count
+        enum_impl.associate_const("COUNT", "usize", relic_sets.len().to_string(), "pub");
+
         // Generate to_id() function
         let to_id_fn = enum_impl.new_fn("to_id").vis("pub const").arg_self().ret("&'static str");
 

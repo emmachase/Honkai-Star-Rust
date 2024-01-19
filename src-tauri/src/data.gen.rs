@@ -33,6 +33,7 @@ pub enum RelicSet {
 }
 
 impl RelicSet {
+    pub const COUNT: usize = 28;
     pub const fn to_id(self) -> &'static str {
         match self {
             RelicSet::PasserbyOfWanderingCloud => "101",
@@ -189,6 +190,7 @@ pub enum LightCone {
 }
 
 impl LightCone {
+    pub const COUNT: usize = 83;
     pub const fn to_id(self) -> &'static str {
         match self {
             LightCone::Arrows => "20000",
@@ -416,6 +418,7 @@ pub enum Character {
 }
 
 impl Character {
+    pub const COUNT: usize = 44;
     pub const fn to_id(self) -> &'static str {
         match self {
             Character::March7th => "1001",
