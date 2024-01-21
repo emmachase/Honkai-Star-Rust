@@ -7,7 +7,7 @@ pub type Ascension = u8;
 pub type Eidolon = u8;
 pub type Superimposition = u8;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct CharacterStats {
     pub level: Level,
     pub ascension: Ascension,

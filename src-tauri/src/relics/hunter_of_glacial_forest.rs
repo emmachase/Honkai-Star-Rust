@@ -22,7 +22,7 @@ impl RelicSetKit for HunterOfGlacialForest2Piece {
 }
 
 impl RelicSetKit for HunterOfGlacialForest4Piece {
-    fn apply_base_passives(&self, p: RelicSetKitParams) {
+    fn apply_base_passives(&self, _p: RelicSetKitParams) {
         // Nothing to do
     }
 

@@ -2,6 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![allow(dead_code)] // TODO: remove
 
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::{thread, sync::Arc};
 
 use characters::CharacterKit;
@@ -66,7 +68,7 @@ fn greet(_name: &str) -> String {
     let light_cone_state = LightConeState {
         level: 80,
         ascension: 6,
-        superimposition: 1 - 1,
+        superimposition: 5 - 1,
     };
     let character_stats = calculate_character_base_stats((character_id, character_state), Some((light_cone_id, light_cone_state)));
 
@@ -100,13 +102,6 @@ fn greet(_name: &str) -> String {
     };
 
     let all_relics = TEST_SCAN.relics.iter().filter_map(|r| r.to_relic()).collect::<Vec<_>>();
-
-    println!("Relics: {:?}", all_relics.iter().filter(|r| 
-        r.slot == RelicSlot::Chest
-            // r.main_stat.0 == EffectPropertyType::CriticalChanceBase ||
-            // r.main_stat.0 == EffectPropertyType::CriticalDamageBase
-        // )
-    ).collect::<Vec<_>>(),);
 
     let relics_by_slot = vec![
         all_relics.clone().into_iter().filter(|r| r.slot == RelicSlot::Head).collect::<Vec<_>>(),
@@ -171,6 +166,33 @@ struct CalculatorParameters {
     relic_conditionals: ConditionalRelicSetEffects
 }
 
+#[derive(PartialEq)]
+struct CalculatorResult {
+    relic_perm: Vec<usize>, // Relic id per slot
+    cols: Vec<(String, f64)>,
+    calculated_stats: (CharacterStats, CharacterStats) // (Base stats, Combat stats)
+}
+
+impl Eq for CalculatorResult {}
+
+impl PartialOrd for CalculatorResult {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.get_comparable().partial_cmp(&other.get_comparable()) // TODO
+    }
+}
+
+impl Ord for CalculatorResult {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).expect("you done goofed")
+    }
+}
+
+impl CalculatorResult {
+    fn get_comparable(&self) -> f64 {
+        self.cols[0].1
+    }
+}
+
 fn calculate_cols(
     // character: (&CharacterDescriptor, &(dyn CharacterKit+Sync), &CharacterState, &CharacterStats), light_cone: (&(dyn LightConeKit+Sync), &LightConeState), enemy_config: &EnemyConfig
     params: CalculatorParameters,
@@ -206,6 +228,8 @@ fn calculate_cols(
     let thread_count = 8;
     let batches = relics.permutation_batches(thread_count);
 
+    let top_k = 100; // TODO: Configurable
+
     let mut threads = vec![];
     for tid in 0..thread_count {
         // let my_kit = kit.clone();
@@ -218,8 +242,8 @@ fn calculate_cols(
             // let mut max_relics: Option<Vec<&Relic>> = None;
             // let mut max_boosts: Option<Boosts> = None;
 
-            let mut results = vec![];
-            results.reserve(batches[tid].size());
+            let mut results: BinaryHeap<Reverse<CalculatorResult>> = BinaryHeap::new(); //vec![];
+            results.reserve(top_k); //batches[tid].size());
 
             for relic_perm in relics.enumerated_permutation_subset(&batches[tid]) {
                 let mut base_boosts = base_boosts.clone();
@@ -309,12 +333,21 @@ fn calculate_cols(
                 // }
 
                 // if cols[0].1 > 80000.0 {
-                results.push((
-                    relic_perm.into_iter().map(|(_, i)| i).collect::<Vec<usize>>(), 
-                    // relic_perm.into_iter().map(|x|)
+                let result = CalculatorResult {
+                    relic_perm: relic_perm.into_iter().map(|(_, i)| i).collect::<Vec<usize>>(), 
                     cols, 
-                    (params.character_stats + base_boosts, params.character_stats + total_combat_boosts)
-                ));
+                    calculated_stats: (params.character_stats + base_boosts, params.character_stats + total_combat_boosts)
+                };
+
+                let cur_min = results.peek();
+                if cur_min.is_none() || cur_min.unwrap().0.get_comparable() < result.get_comparable() {
+                    if results.len() >= top_k {
+                        results.pop(); // Remove the smallest element
+                    }
+                    
+                    results.push(Reverse(result));
+                }
+                
                 // }
             }
 
@@ -324,12 +357,12 @@ fn calculate_cols(
 
     let mut max: Option<Vec<(String, f64)>> = None;
     let mut max_relics: Option<Vec<Relic>> = None;
-    let mut max_boosts: Option<(CharacterStats, CharacterStats)> = None;
+    let mut max_stats: Option<(CharacterStats, CharacterStats)> = None;
 
     for thread in threads {
         let results = thread.join().unwrap();
 
-        for (relic_perm, cols, boosts) in results {
+        for Reverse(CalculatorResult { relic_perm, cols, calculated_stats }) in results {
             let resolved_relics = relic_perm.into_iter().enumerate().map(|(i, j)| relics[i][j].clone()).collect::<Vec<_>>();
 
             if let Some(maxv) = &max {
@@ -337,12 +370,12 @@ fn calculate_cols(
                 if cols[0].1 > maxv[0].1 {
                     max = Some(cols);
                     max_relics = Some(resolved_relics);
-                    max_boosts = Some(boosts);
+                    max_stats = Some(calculated_stats);
                 }
             } else {
                 max = Some(cols);
                 max_relics = Some(resolved_relics);
-                max_boosts = Some(boosts);
+                max_stats = Some(calculated_stats);
             }
         }
     }
@@ -368,7 +401,7 @@ fn calculate_cols(
 
     // }
 
-    return (max_relics.unwrap(), max.unwrap(), max_boosts.unwrap());
+    return (max_relics.unwrap(), max.unwrap(), max_stats.unwrap());
 }
 
 fn main() {
