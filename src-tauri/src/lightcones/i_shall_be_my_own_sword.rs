@@ -1,13 +1,28 @@
+use serde::{Deserialize, Serialize};
 use serde_tuple::Deserialize_tuple;
+use specta::Type;
 
 use crate::{promotions::LightConeState, damage::{Boosts, EnemyConfig}, characters::StatColumnType, data::use_light_cone_effects, data_mappings::LightCone, util::deserialize::deserialize_u8};
 
 use super::LightConeKit;
 
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, Type)]
+pub struct IShallBeMyOwnSwordConfig {
+    pub eclipse_stacks: u8,
+}
+
 pub struct IShallBeMyOwnSword {
     pub descriptions: Vec<IShallBeMyOwnSwordDesc>,
+    pub config: IShallBeMyOwnSwordConfig,
+}
 
-    pub eclipse_stacks: u8,
+impl IShallBeMyOwnSword {
+    pub fn new(config: IShallBeMyOwnSwordConfig) -> Self {
+        return Self {
+            descriptions: IShallBeMyOwnSwordDesc::get(),
+            config,
+        }
+    }
 }
 
 /**
@@ -42,8 +57,8 @@ impl LightConeKit for IShallBeMyOwnSword {
     fn apply_base_combat_passives(&self, _enemy_config: &EnemyConfig, light_cone_state: &LightConeState, boosts: &mut Boosts) {
         let desc = self.descriptions[light_cone_state.superimposition as usize];
 
-        boosts.all_type_dmg_boost += self.eclipse_stacks as f64 * desc.dmg_per_stack;
-        if self.eclipse_stacks == desc.max_stacks {
+        boosts.all_type_dmg_boost += self.config.eclipse_stacks as f64 * desc.dmg_per_stack;
+        if self.config.eclipse_stacks == desc.max_stacks {
             boosts.def_shred += desc.def_pen_pct;
         }
     }

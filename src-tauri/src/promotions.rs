@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
+use specta::Type;
 
 use crate::{data_mappings::{Character, LightCone}, damage::{Level, Ascension, CharacterStats, Eidolon, Superimposition}, data::{Promotions, PromotionStepSpec, use_character_promotions, use_character, use_light_cone_promotions, CharacterDescriptor, use_character_trace_node, EffectPropertyType}, characters::CharacterTraceIds};
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, Type)]
 pub struct CharacterSkillState {
     // These skill levels should be 0-indexed (need to convert from 1-indexed when reading from scanner)
     pub basic: u8,
@@ -11,7 +12,7 @@ pub struct CharacterSkillState {
     pub talent: u8,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, Type)]
 pub struct CharacterTraceState {
     pub ability_1: bool,
     pub ability_2: bool,
@@ -28,7 +29,7 @@ pub struct CharacterTraceState {
     pub stat_10: bool,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, Type)]
 pub struct CharacterState {
     pub level: Level,
     pub ascension: Ascension,
@@ -37,7 +38,7 @@ pub struct CharacterState {
     pub traces: CharacterTraceState,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, Type)]
 pub struct LightConeState {
     pub level: Level,
     pub ascension: Ascension,

@@ -47,7 +47,7 @@ fn gen_enum(scope: &mut Scope, name: &str, json: &str, name_mapper: fn(&IdNameDe
 
     
     let relic_enum = scope.new_enum(name).vis("pub");
-    relic_enum.derive("Debug").derive("Clone").derive("Copy").derive("PartialEq").derive("Eq").derive("Hash");
+    relic_enum.derive("Debug").derive("Clone").derive("Copy").derive("PartialEq").derive("Eq").derive("Hash").derive("Serialize").derive("Deserialize").derive("Type");
     for relic_set in &relic_sets {
         relic_enum.new_variant(relic_set.name.clone());
     }
@@ -85,6 +85,9 @@ fn gen_enum(scope: &mut Scope, name: &str, json: &str, name_mapper: fn(&IdNameDe
 
 fn main() {
     let mut scope = Scope::new();
+    scope.import("serde", "{Deserialize, Serialize}");
+    scope.import("specta", "Type");
+
     gen_enum(&mut scope, "RelicSet", RELIC_SETS_JSON, |_| None);
     gen_enum(&mut scope, "LightCone", LIGHT_CONES_JSON, |_| None);
     gen_enum(&mut scope, "Character", CHARACTERS_JSON, |d| match d.id.as_str() {

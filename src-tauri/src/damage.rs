@@ -1,5 +1,8 @@
 use std::ops::Add;
 
+use serde::{Deserialize, Serialize};
+use specta::Type;
+
 use crate::data::Element;
 
 pub type Level = u8;
@@ -72,7 +75,7 @@ impl CharacterStats {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, Type)]
 pub struct EnemyConfig {
     pub count: u8,
     pub level: Level,

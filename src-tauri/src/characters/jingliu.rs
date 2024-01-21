@@ -1,17 +1,32 @@
+use serde::{Deserialize, Serialize};
 use serde_tuple::Deserialize_tuple;
+use specta::Type;
 
 use crate::{damage::{Boosts, calculate_damage_with_avg_crits, EnemyConfig}, promotions::CharacterState, data::{use_character, use_character_skill}, data_mappings::Character, util::deserialize::deserialize_u8};
 
 use super::{CharacterKit, StatColumnType};
 
-pub struct Jingliu {
-    pub descriptions: JingliuDescriptions,
-
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, Type)]
+pub struct JingliuConfig {
     pub enhanced_state: bool, // Spectral Transmigration
     pub hp_drain_pct: f64, // 0-1, how much of ATK% cap is available
 
     pub e1_crit_dmg: bool,
     pub e2_skill_buff: bool,
+}
+
+pub struct Jingliu {
+    pub descriptions: JingliuDescriptions,
+    pub config: JingliuConfig,
+}
+
+impl Jingliu {
+    pub fn new(config: JingliuConfig) -> Self {
+        return Self {
+            descriptions: JingliuDescriptions::get(),
+            config,
+        }
+    }
 }
 
 /**
@@ -114,7 +129,7 @@ impl CharacterKit for Jingliu {
     }
 
     fn apply_base_combat_passives(&self, _enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts) {
-        if self.enhanced_state {
+        if self.config.enhanced_state {
             if character_state.traces.ability_1 {
                 boosts.effect_res += 0.35; // TODO: Do i care about getting this from the desc?
             }
@@ -127,14 +142,14 @@ impl CharacterKit for Jingliu {
             }
 
             boosts.crit_rate += talent.crit_rate_pct;
-            boosts.atk_pct += atk_pct_cap * self.hp_drain_pct;
+            boosts.atk_pct += atk_pct_cap * self.config.hp_drain_pct;
 
             if character_state.eidolon >= 6 {
                 boosts.crit_dmg += 0.5;
             }
         }
 
-        if character_state.eidolon >= 1 && self.e1_crit_dmg {
+        if character_state.eidolon >= 1 && self.config.e1_crit_dmg {
             boosts.crit_dmg += 0.24;
         }
     }
@@ -146,13 +161,13 @@ impl CharacterKit for Jingliu {
     fn apply_stat_type_conditionals(&self, _enemy_config: &EnemyConfig, stat_type: StatColumnType, character_state: &CharacterState, boosts: &mut Boosts) {
         match stat_type {
             StatColumnType::SkillDamage => {
-                if self.enhanced_state && character_state.eidolon >= 2 && self.e2_skill_buff {
+                if self.config.enhanced_state && character_state.eidolon >= 2 && self.config.e2_skill_buff {
                     boosts.all_type_dmg_boost += 0.8;
                 }
             }
 
             StatColumnType::UltimateDamage => {
-                if self.enhanced_state && character_state.traces.ability_3 {
+                if self.config.enhanced_state && character_state.traces.ability_3 {
                     boosts.all_type_dmg_boost += 0.2;
                 }
             },
@@ -162,7 +177,7 @@ impl CharacterKit for Jingliu {
     }
 
     fn get_stat_columns(&self) -> Vec<StatColumnType> {
-        return if self.enhanced_state {
+        return if self.config.enhanced_state {
             vec![
                 StatColumnType::SkillDamage,
                 StatColumnType::UltimateDamage
@@ -179,7 +194,7 @@ impl CharacterKit for Jingliu {
     fn compute_stat_column(&self, column_type: StatColumnType, character_state: &CharacterState, character_stats: &crate::damage::CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64 {
         match column_type {
             StatColumnType::BasicDamage => {
-                if self.enhanced_state {
+                if self.config.enhanced_state {
                     unreachable!("Basic is not available in enhanced state")
                 }
 
@@ -190,7 +205,7 @@ impl CharacterKit for Jingliu {
             StatColumnType::SkillDamage => {
                 let atk = character_stats.atk(boosts);
 
-                if self.enhanced_state {
+                if self.config.enhanced_state {
                     let desc = self.descriptions.enhanced_skill[character_state.skills.skill as usize];
 
                     let mut base_main_dmg = desc.atk_pct_main * atk;

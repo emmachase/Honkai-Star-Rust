@@ -6,10 +6,11 @@ use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::{thread, sync::Arc};
 
-use characters::CharacterKit;
+use characters::{CharacterKit, CharacterConfig};
 use damage::CharacterStats;
 use data::{CharacterDescriptor, RelicSlot, EffectPropertyType};
 use data_mappings::RelicSet;
+use lightcones::LightConeConfig;
 use relics::{Relic, RelicSetKit, ConditionalRelicSetEffects, RelicSetKitParams};
 
 use crate::relics::Permute;
@@ -29,77 +30,18 @@ mod lightcones;
 mod relics;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
+#[tauri::command(async)]
 #[specta::specta]
-fn greet(_name: &str) -> String {
-    // let mut boosts = Boosts::default();
-
-    // let jingliu = Jingliu {};
-    let character_id = Character::Jingliu;
+fn greet(character_cfg: CharacterConfig, character_state: CharacterState, light_cone_cfg: LightConeConfig, light_cone_state: LightConeState, enemy_config: EnemyConfig) -> String {
+    let character_id = character_cfg.get_character_id();
     let character = use_character(character_id);
-    let character_state = CharacterState {
-        ascension: 6,
-        eidolon: 6,
-        level: 80,
-        skills: CharacterSkillState {
-            basic: 7 - 1,
-            skill: 12 - 1,
-            ult: 12 - 1,
-            talent: 12 - 1,
-        },
-        traces: CharacterTraceState {
-            ability_1: true,
-            ability_2: true,
-            ability_3: true,
-            stat_1: true,
-            stat_2: true,
-            stat_3: true,
-            stat_4: true,
-            stat_5: true,
-            stat_6: true,
-            stat_7: true,
-            stat_8: true,
-            stat_9: true,
-            stat_10: true,
-        }
-    };
 
-    let light_cone_id = LightCone::IShallBeMyOwnSword;
-    let light_cone_state = LightConeState {
-        level: 80,
-        ascension: 6,
-        superimposition: 5 - 1,
-    };
+    let light_cone_id = light_cone_cfg.get_light_cone_id();
+
     let character_stats = calculate_character_base_stats((character_id, character_state), Some((light_cone_id, light_cone_state)));
 
-    // TODO: Apply light cone effect properly
-    // boosts.crit_dmg += 0.2;
-    // boosts.all_type_dmg_boost += 0.14 * 3.0;
-    // boosts.def_shred += 0.12;
-
-    let kit = Jingliu {
-        descriptions: JingliuDescriptions::get(),
-
-        enhanced_state: true,
-        hp_drain_pct: 1.0,
-
-        e1_crit_dmg: true,
-        e2_skill_buff: true,
-    };
-
-    let lc_kit = IShallBeMyOwnSword {
-        descriptions: IShallBeMyOwnSwordDesc::get(),
-        eclipse_stacks: 3,
-    };
-
-    let enemy_config = EnemyConfig {
-        count: 1,
-        level: 95,
-    
-        resistance: 0.2,
-        elemental_weakness: true,
-        weakness_broken: false,
-    };
+    let kit = character_cfg.get_kit();
+    let lc_kit = light_cone_cfg.get_kit();
 
     let all_relics = TEST_SCAN.relics.iter().filter_map(|r| r.to_relic()).collect::<Vec<_>>();
 
@@ -136,11 +78,11 @@ fn greet(_name: &str) -> String {
     let cols = calculate_cols(
         CalculatorParameters {
             character: character.clone(),
-            character_kit: Arc::new(kit),
+            character_kit: Arc::from(kit),
             character_state,
             character_stats,
             light_cone: light_cone_id,
-            light_cone_kit: Arc::new(lc_kit),
+            light_cone_kit: Arc::from(lc_kit),
             light_cone_state,
             enemy_config,
             relic_conditionals: ConditionalRelicSetEffects::default(),

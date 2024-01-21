@@ -1,6 +1,9 @@
 pub mod jingliu;
 
-use crate::{data::{use_character_trace_node, CharacterDescriptor, EffectPropertyType, Element}, damage::{Boosts, EnemyConfig, CharacterStats}, promotions::CharacterState};
+use serde::{Serialize, Deserialize};
+use specta::Type;
+
+use crate::{data::{use_character_trace_node, CharacterDescriptor, EffectPropertyType, Element}, damage::{Boosts, EnemyConfig, CharacterStats}, promotions::CharacterState, data_mappings::Character};
 
 #[derive(Debug, Clone)]
 pub struct CharacterTraceIds {
@@ -152,4 +155,23 @@ pub trait CharacterKit {
 
     fn get_stat_columns(&self) -> Vec<StatColumnType>;
     fn compute_stat_column(&self, column_type: StatColumnType, character_state: &CharacterState, character_stats: &CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64;
+}
+
+#[derive(Debug, Type, Serialize, Deserialize)]
+pub enum CharacterConfig {
+    Jingliu(jingliu::JingliuConfig),
+}
+
+impl CharacterConfig {
+    pub fn get_character_id(&self) -> Character {
+        match self {
+            CharacterConfig::Jingliu(_) => Character::Jingliu,
+        }
+    }
+
+    pub fn get_kit(&self) -> Box<dyn CharacterKit+Send+Sync> {
+        match self {
+            CharacterConfig::Jingliu(config) => Box::new(jingliu::Jingliu::new(*config)),
+        }
+    }
 }

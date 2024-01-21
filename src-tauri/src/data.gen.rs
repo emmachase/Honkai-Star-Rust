@@ -1,6 +1,9 @@
 // GENERATED CODE - DO NOT EDIT MANUALLY
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+use serde::{Deserialize, Serialize};
+use specta::Type;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Type)]
 pub enum RelicSet {
     PasserbyOfWanderingCloud,
     MusketeerOfWildWheat,
@@ -102,7 +105,7 @@ impl RelicSet {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Type)]
 pub enum LightCone {
     Arrows,
     Cornucopia,
@@ -369,7 +372,7 @@ impl LightCone {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Type)]
 pub enum Character {
     March7th,
     DanHeng,
