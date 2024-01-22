@@ -7,7 +7,7 @@ use std::collections::BinaryHeap;
 use std::sync::RwLock;
 use std::{thread, sync::Arc};
 
-use characters::{CharacterKit, CharacterConfig};
+use characters::{CharacterKit, CharacterConfig, StatColumnType};
 use damage::CharacterStats;
 use data::{CharacterDescriptor, RelicSlot, EffectPropertyType};
 use data_mappings::RelicSet;
@@ -174,7 +174,7 @@ fn calculate_cols(
     params.light_cone_kit.apply_base_combat_passives(&params.enemy_config, &params.light_cone_state, &mut combat_boosts);
     params.character_kit.apply_base_combat_passives(&params.enemy_config, &params.character_state, &mut combat_boosts);
 
-    let thread_count = 8;
+    let thread_count = 16;
     let batches = relics.permutation_batches(thread_count);
 
     let top_k = 100; // TODO: Configurable
@@ -183,11 +183,14 @@ fn calculate_cols(
     for tid in 0..thread_count {
         let params = params.clone();
         let relics = relics.clone();
-        let cols = params.character_kit.get_stat_columns();
+        let kit_cols = params.character_kit.get_stat_columns();
         let batches = batches.clone();
         threads.push(thread::spawn(move || {
             let mut results: BinaryHeap<Reverse<CalculatorResult>> = BinaryHeap::new(); // Reverse gives us a min-heap
             results.reserve(top_k);
+
+            let mut cols: Vec<(StatColumnType, f64)> = Vec::new();
+            cols.reserve(3); // TODO
 
             for relic_perm in relics.enumerated_permutation_subset(&batches[tid]) {
                 let mut base_boosts = base_boosts.clone();
@@ -233,7 +236,8 @@ fn calculate_cols(
                     boosts: &mut total_combat_boosts,
                 });
 
-                let cols: Vec<(String, f64)> = cols.iter().map(|&column_type| {
+                cols.clear();
+                kit_cols.iter().for_each(|&column_type| {
                     let mut skill_boosts = total_combat_boosts.clone();
                     params.light_cone_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.light_cone_state, &mut skill_boosts);
                     params.character_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.character_state, &mut skill_boosts);
@@ -245,17 +249,19 @@ fn calculate_cols(
                         boosts: &mut skill_boosts,
                     }, column_type);
 
-                    (column_type.to_name().to_owned(), params.character_kit.compute_stat_column(column_type, &params.character_state, &params.character_stats, &skill_boosts, &params.enemy_config))
-                }).collect();
+                    cols.push((column_type, params.character_kit.compute_stat_column(column_type, &params.character_state, &params.character_stats, &skill_boosts, &params.enemy_config)));
+                });
 
-                let result = CalculatorResult {
-                    relic_perm: relic_perm.into_iter().map(|(_, i)| i).collect::<Vec<usize>>(), 
-                    cols, 
-                    calculated_stats: (params.character_stats + base_boosts, params.character_stats + total_combat_boosts)
-                };
+                
 
                 let cur_min = results.peek();
-                if cur_min.is_none() || cur_min.unwrap().0.get_comparable() < result.get_comparable() {
+                if cur_min.is_none() || cur_min.unwrap().0.get_comparable() < cols[0].1 { // result.get_comparable() {
+                    let result = CalculatorResult {
+                        relic_perm: relic_perm.into_iter().map(|(_, i)| i).collect::<Vec<usize>>(), 
+                        cols: cols.clone().into_iter().map(|(column_type, value)| (column_type.to_name().to_owned(), value)).collect::<Vec<_>>(),
+                        calculated_stats: (params.character_stats + base_boosts, params.character_stats + total_combat_boosts)
+                    };
+
                     if results.len() >= top_k {
                         results.pop(); // Remove the smallest element
                     }

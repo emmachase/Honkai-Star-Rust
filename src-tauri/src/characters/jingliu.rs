@@ -131,7 +131,7 @@ impl CharacterKit for Jingliu {
     fn apply_base_combat_passives(&self, _enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts) {
         if self.config.enhanced_state {
             if character_state.traces.ability_1 {
-                boosts.effect_res += 0.35; // TODO: Do i care about getting this from the desc?
+                boosts.effect_res += 0.35;
             }
 
             let talent = self.descriptions.talent[character_state.skills.talent as usize];

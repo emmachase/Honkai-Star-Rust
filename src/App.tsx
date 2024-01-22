@@ -112,6 +112,31 @@ function App() {
             {label: "Effect Hit Rate", value: "StatusProbabilityBase"},
             {label: "Outgoing Healing Boost", value: "HealRatioBase"},
           ]}/>
+          <MultiComboBox<EffectPropertyType> label="Feet Pics" options={[
+            {label: "ATK%", value: "AttackAddedRatio"},
+            {label: "DEF%", value: "DefenceAddedRatio"},
+            {label: "HP%", value: "HPAddedRatio"},
+            {label: "SPD", value: "SpeedDelta"},
+          ]}/>
+          <MultiComboBox<EffectPropertyType> label="Planar Sphere Filter" options={[
+            {label: "ATK%", value: "AttackAddedRatio"},
+            {label: "DEF%", value: "DefenceAddedRatio"},
+            {label: "HP%", value: "HPAddedRatio"},
+            {label: "Physical DMG Boost", value: "PhysicalAddedRatio"},
+            {label: "Fire DMG Boost", value: "FireAddedRatio"},
+            {label: "Ice DMG Boost", value: "IceAddedRatio"},
+            {label: "Thunder DMG Boost", value: "ThunderAddedRatio"},
+            {label: "Wind DMG Boost", value: "WindAddedRatio"},
+            {label: "Quantum DMG Boost", value: "QuantumAddedRatio"},
+            {label: "Imaginary DMG Boost", value: "ImaginaryAddedRatio"},
+          ]}/>
+          <MultiComboBox<EffectPropertyType> label="Link Rope Filter" options={[
+            {label: "ATK%", value: "AttackAddedRatio"},
+            {label: "DEF%", value: "DefenceAddedRatio"},
+            {label: "HP%", value: "HPAddedRatio"},
+            {label: "Break Effect", value: "BreakDamageAddedRatioBase"},
+            {label: "Energy Regeneration Rate", value: "SPRatioBase"},
+          ]}/>
         </View>
       </Grid>
       

@@ -26,7 +26,11 @@ export function MultiComboBox<V extends string = string>(props: {
     return (
         <Flex alignItems={"end"} gap={"size-200"}>
             <ComboBox label={props.label} selectedKey={selectionHack} onSelectionChange={k => {
-                setSelectedKeys([...selectedKeys, k as V])
+                if (selectedKeys.includes(k as V)) {
+                    setSelectedKeys((keys) => keys.filter(k2 => k2 !== k))
+                } else {
+                    setSelectedKeys([...selectedKeys, k as V])
+                }
                 setSelectionHack(k as V)
             }}>
                 {/* <Item key="CRIT Rate">CRIT Rate</Item>
@@ -40,10 +44,12 @@ export function MultiComboBox<V extends string = string>(props: {
             <Flex gap={"size-100"}>
                 {selectedKeys.map(k => 
                     <Button variant="secondary" key={k} onPress={() => {
-                        setSelectedKeys(selectedKeys.filter(k2 => k2 !== k))
+                        setSelectedKeys((keys) => keys.filter(k2 => k2 !== k))
                     }}>
-                        <span className="pl-1"><Close /></span>
-                        <span className="pl-1 pr-2"> {labelMap.get(k)}</span>
+                        <Flex alignItems={"start"}>
+                            <Close size="XXL" marginStart={"size-50"}/>
+                            <span className="pl-1 pr-2"> {labelMap.get(k)}</span>
+                        </Flex>
                     </Button>
                 )}
             </Flex>
