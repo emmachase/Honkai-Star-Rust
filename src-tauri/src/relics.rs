@@ -4,6 +4,7 @@ pub mod space_sealing_station;
 use crate::{data_mappings::RelicSet, data::{EffectPropertyType, RelicSlot, Element}, damage::{Level, Boosts, EnemyConfig, CharacterStats}, characters::{apply_effect_boost, StatColumnType}, promotions::CharacterState};
 
 use self::{space_sealing_station::SpaceSealingStation2Piece, hunter_of_glacial_forest::{HunterOfGlacialForest2Piece, HunterOfGlacialForest4Piece}};
+use lazy_static::lazy_static;
 
 pub type RelicStat = (EffectPropertyType, f64);
 
@@ -220,18 +221,26 @@ impl<'a, T> Iterator for Permutations<'a, T> {
 }
 
 impl<'a, T> Iterator for EnumeratedPermutations<'a, T> {
-    type Item = Vec<(&'a T, usize)>;
+    type Item = [(&'a T, usize); 6]; // Vec<(&'a T, usize)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.stop_at {
             return None;
         }
 
-        let mut result = Vec::new();
+        let xd = &self.items[0][0]; // Hack to just initialize the slice with junk before we fill it
+        let mut result: [(&T, usize); 6] = [
+            (xd, 0),
+            (xd, 0),
+            (xd, 0),
+            (xd, 0),
+            (xd, 0),
+            (xd, 0),
+        ];
         let mut index = self.index;
-        for item in self.items.iter() {
+        for (i, item) in self.items.iter().enumerate() {
             let subindex = index % item.len();
-            result.push((&item[subindex], subindex));
+            result[i] = (&item[subindex], subindex);
             index /= item.len();
         }
 
@@ -333,7 +342,7 @@ impl RelicSetKit for Vec<Box<dyn RelicSetKit>> {
     }
 }
 
-impl RelicSetKit for [Option<Box<dyn RelicSetKit>>] {
+impl RelicSetKit for [Option<&dyn RelicSetKit>] {
     fn apply_base_passives(&self, p: RelicSetKitParams) {
         for kit in self.iter() {
             if let Some(kit) = kit {
@@ -365,19 +374,27 @@ impl RelicSetKit for [Option<Box<dyn RelicSetKit>>] {
     }
 }
 
-impl RelicSet {
-    pub fn get_2p_effect(&self) -> Option<Box<dyn RelicSetKit>> {
-        match self {
-            RelicSet::HunterOfGlacialForest => Some(Box::new(HunterOfGlacialForest2Piece)),
 
-            RelicSet::SpaceSealingStation => Some(Box::new(SpaceSealingStation2Piece)),
+static hunter_of_glacial_forest_2p: HunterOfGlacialForest2Piece = HunterOfGlacialForest2Piece;
+static space_sealing_station_2p: SpaceSealingStation2Piece = SpaceSealingStation2Piece;
+
+static hunter_of_glacial_forest_4p: HunterOfGlacialForest4Piece = HunterOfGlacialForest4Piece;
+
+impl RelicSet {
+    pub fn get_2p_effect(&self) -> Option<&dyn RelicSetKit> {
+        // let x = hunter_of_glacial_forest_2p;
+        
+        match self {
+            RelicSet::HunterOfGlacialForest => Some(&hunter_of_glacial_forest_2p),
+
+            RelicSet::SpaceSealingStation => Some(&space_sealing_station_2p),
             _ => None // TODO: Implement other relic sets
         }
     }
 
-    pub fn get_4p_effect(&self) -> Option<Box<dyn RelicSetKit>> {
+    pub fn get_4p_effect(&self) -> Option<&dyn RelicSetKit> {
         match self {
-            RelicSet::HunterOfGlacialForest => Some(Box::new(HunterOfGlacialForest4Piece)),
+            RelicSet::HunterOfGlacialForest => Some(&HunterOfGlacialForest4Piece),
 
             _ => None // TODO: Implement other relic sets
         }

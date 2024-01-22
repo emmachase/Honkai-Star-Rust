@@ -60,21 +60,24 @@ fn prank_him_john(
         all_relics.clone().into_iter().filter(|r| r.slot == RelicSlot::Head).collect::<Vec<_>>(),
         all_relics.clone().into_iter().filter(|r| r.slot == RelicSlot::Hands).collect::<Vec<_>>(),
         all_relics.clone().into_iter().filter(|r| 
-            r.slot == RelicSlot::Chest && (
-                r.main_stat.0 == EffectPropertyType::CriticalChanceBase ||
-                r.main_stat.0 == EffectPropertyType::CriticalDamageBase
-            )
+            r.slot == RelicSlot::Chest 
+                && (
+                    r.main_stat.0 == EffectPropertyType::CriticalChanceBase ||
+                    r.main_stat.0 == EffectPropertyType::CriticalDamageBase
+                )
         ).collect::<Vec<_>>(),
         all_relics.clone().into_iter().filter(|r| 
-            r.slot == RelicSlot::Feet && (
-                r.main_stat.0 == EffectPropertyType::SpeedDelta
-            )
+            r.slot == RelicSlot::Feet 
+                && (
+                    r.main_stat.0 == EffectPropertyType::SpeedDelta
+                )
         ).collect::<Vec<_>>(),
         all_relics.clone().into_iter().filter(|r| 
-            r.slot == RelicSlot::PlanarSphere && (
-                r.main_stat.0 == EffectPropertyType::IceAddedRatio ||
-                r.main_stat.0 == EffectPropertyType::AttackAddedRatio
-            )
+            r.slot == RelicSlot::PlanarSphere 
+                && (
+                    r.main_stat.0 == EffectPropertyType::IceAddedRatio ||
+                    r.main_stat.0 == EffectPropertyType::AttackAddedRatio
+                )
         ).collect::<Vec<_>>(),
         all_relics.clone().into_iter().filter(|r| r.slot == RelicSlot::LinkRope).collect::<Vec<_>>(),
     ];

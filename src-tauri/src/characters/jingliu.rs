@@ -186,7 +186,7 @@ impl CharacterKit for Jingliu {
             vec![
                 StatColumnType::BasicDamage,
                 StatColumnType::SkillDamage,
-                StatColumnType::UltimateDamage
+                StatColumnType::UltimateDamage,
             ]
         }
     }
