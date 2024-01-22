@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize, de::IntoDeserializer};
 use serde_tuple::{Deserialize_tuple, Serialize_tuple};
 use lazy_static::lazy_static;
+use specta::Type;
 
 use crate::data_mappings::{Character, LightCone, RelicSet};
 
@@ -117,7 +118,7 @@ pub struct RelicSetEffects {
     pub four_piece: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Type)]
 pub enum EffectPropertyType {
     HPDelta,
     AttackDelta,

@@ -4,6 +4,7 @@
 
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
+use std::sync::RwLock;
 use std::{thread, sync::Arc};
 
 use characters::{CharacterKit, CharacterConfig};
@@ -12,10 +13,13 @@ use data::{CharacterDescriptor, RelicSlot, EffectPropertyType};
 use data_mappings::RelicSet;
 use lightcones::LightConeConfig;
 use relics::{Relic, RelicSetKit, ConditionalRelicSetEffects, RelicSetKitParams};
+use serde::{Serialize, Deserialize};
+use specta::Type;
+use tauri::State;
 
 use crate::relics::Permute;
 use crate::scans::TEST_SCAN;
-use crate::{data::use_character, damage::{Boosts, EnemyConfig}, data_mappings::{Character, LightCone}, promotions::{CharacterState, CharacterSkillState, CharacterTraceState, calculate_character_base_stats, LightConeState}, characters::{apply_minor_trace_effects, jingliu::{Jingliu, JingliuDescriptions}}, lightcones::{i_shall_be_my_own_sword::{IShallBeMyOwnSword, IShallBeMyOwnSwordDesc}, LightConeKit}};
+use crate::{data::use_character, damage::{Boosts, EnemyConfig}, data_mappings::LightCone, promotions::{CharacterState, calculate_character_base_stats, LightConeState}, characters::apply_minor_trace_effects, lightcones::LightConeKit};
 
 #[path = "data.gen.rs"]
 mod data_mappings;
@@ -32,7 +36,14 @@ mod relics;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command(async)]
 #[specta::specta]
-fn greet(character_cfg: CharacterConfig, character_state: CharacterState, light_cone_cfg: LightConeConfig, light_cone_state: LightConeState, enemy_config: EnemyConfig) -> String {
+fn prank_him_john(
+    storage: State<Storage>,
+    character_cfg: CharacterConfig, 
+    character_state: CharacterState, 
+    light_cone_cfg: LightConeConfig, 
+    light_cone_state: LightConeState, 
+    enemy_config: EnemyConfig
+) -> String {
     let character_id = character_cfg.get_character_id();
     let character = use_character(character_id);
 
@@ -43,7 +54,7 @@ fn greet(character_cfg: CharacterConfig, character_state: CharacterState, light_
     let kit = character_cfg.get_kit();
     let lc_kit = light_cone_cfg.get_kit();
 
-    let all_relics = TEST_SCAN.relics.iter().filter_map(|r| r.to_relic()).collect::<Vec<_>>();
+    let all_relics = storage.relics.read().unwrap();
 
     let relics_by_slot = vec![
         all_relics.clone().into_iter().filter(|r| r.slot == RelicSlot::Head).collect::<Vec<_>>(),
@@ -70,9 +81,6 @@ fn greet(character_cfg: CharacterConfig, character_state: CharacterState, light_
 
     println!("Relics: {:?}", relics_by_slot);
 
-    // let special_boosts = Boosts { hp_flat: 814.6000000101048, hp_pct: 11.6, atk_flat: 387.8000000116881, atk_pct: 61.64400001449512, def_flat: 101.0, def_pct: 9.7, spd: 11.0, effect_res: 11.549999999999999, effect_hit_rate: 4.3, crit_rate: 6.943999998625362, crit_dmg: 78.213, break_effect: 5.1, energy_recharge: 0.0, outgoing_healing_boost: 0.0, elemental_dmg_boost: 0.0, all_type_dmg_boost: 1.2200000000000002, extra_vulnerability: 0.0, def_shred: 0.12, res_pen: 0.0 };
-    // let test = kit.compute_stat_column(characters::StatColumnType::SkillDamage, &character_state, &character_stats, &special_boosts, &enemy_config);
-
     let time = std::time::Instant::now();
 
     let cols = calculate_cols(
@@ -93,6 +101,23 @@ fn greet(character_cfg: CharacterConfig, character_state: CharacterState, light_
     let duration = time.elapsed();
 
     format!("(Checked {} perms in {}s) Results: {:?} {:?}", relics_by_slot.permutations().size(), duration.as_secs_f64(), character_stats, cols)
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+fn get_filtered_relic_count(
+    storage: State<Storage>,
+    filters: RelicFilters
+) {
+
+}
+
+#[derive(Debug, Clone, Type, Serialize, Deserialize)]
+struct RelicFilters {
+    chest        : Vec<EffectPropertyType>,
+    feet         : Vec<EffectPropertyType>,
+    planar_sphere: Vec<EffectPropertyType>,
+    link_rope    : Vec<EffectPropertyType>,
 }
 
 #[derive(Clone)]
@@ -136,25 +161,11 @@ impl CalculatorResult {
 }
 
 fn calculate_cols(
-    // character: (&CharacterDescriptor, &(dyn CharacterKit+Sync), &CharacterState, &CharacterStats), light_cone: (&(dyn LightConeKit+Sync), &LightConeState), enemy_config: &EnemyConfig
     params: CalculatorParameters,
     relics: Vec<Vec<Relic>>,
 ) -> (Vec<Relic>, Vec<(String, f64)>, (CharacterStats, CharacterStats)) {
     let mut base_boosts = Boosts::default();
     
-    // let hands = Relic {
-    //     set: RelicSet::GeniusOfBrilliantStars,
-    //     slot: RelicSlot::Hands,
-    //     level: 15,
-    //     main_stat: (EffectPropertyType::AttackDelta, 352.8),
-    //     sub_stats: vec![
-    //         (EffectPropertyType::HPDelta, 80.0),
-    //         (EffectPropertyType::AttackAddedRatio, 0.06)
-    //     ]
-    // };
-    // boosts.atk_flat += 352.8; // Hands Relic TODO: draw the rest of the owl
-    // hands.apply(effective_element, &mut boosts);
-
     apply_minor_trace_effects(&params.character, &params.character_state, &mut base_boosts);
     params.light_cone_kit.apply_base_passives(&params.enemy_config, &params.light_cone_state, &mut base_boosts);
     params.character_kit.apply_base_passives(&params.enemy_config, &params.character_state, &mut base_boosts);
@@ -163,10 +174,6 @@ fn calculate_cols(
     params.light_cone_kit.apply_base_combat_passives(&params.enemy_config, &params.light_cone_state, &mut combat_boosts);
     params.character_kit.apply_base_combat_passives(&params.enemy_config, &params.character_state, &mut combat_boosts);
 
-    // for relic in relics.iter() {
-    //     relic.apply(effective_element, &mut boosts);
-    // }
-
     let thread_count = 8;
     let batches = relics.permutation_batches(thread_count);
 
@@ -174,37 +181,17 @@ fn calculate_cols(
 
     let mut threads = vec![];
     for tid in 0..thread_count {
-        // let my_kit = kit.clone();
         let params = params.clone();
         let relics = relics.clone();
         let cols = params.character_kit.get_stat_columns();
         let batches = batches.clone();
         threads.push(thread::spawn(move || {
-            // let mut max: Option<Vec<(String, f64)>> = None;
-            // let mut max_relics: Option<Vec<&Relic>> = None;
-            // let mut max_boosts: Option<Boosts> = None;
-
-            let mut results: BinaryHeap<Reverse<CalculatorResult>> = BinaryHeap::new(); //vec![];
-            results.reserve(top_k); //batches[tid].size());
+            let mut results: BinaryHeap<Reverse<CalculatorResult>> = BinaryHeap::new(); // Reverse gives us a min-heap
+            results.reserve(top_k);
 
             for relic_perm in relics.enumerated_permutation_subset(&batches[tid]) {
                 let mut base_boosts = base_boosts.clone();
 
-                // TODO: Test if using a static map is faster
-                // let mut sets = HashMap::new();
-                // sets.reserve(relic_perm.len()); // Does this micro-optimization even matter?
-
-                // let mut active_sets = vec![];
-
-                // for &relic in relic_perm.iter() {
-                //     relic.apply(params.character.element, &mut base_boosts);
-                //     let p = *sets.entry(relic.set).and_modify(|x| *x += 1).or_insert(1);
-                //     if p == 2 {
-                //         if let Some(effect) = relic.set.get_2p_effect() { active_sets.push(effect); }
-                //     } else if p == 4 {
-                //         if let Some(effect) = relic.set.get_4p_effect() { active_sets.push(effect); }
-                //     }
-                // }
                 let mut sets = [0u8; RelicSet::COUNT];
                 let mut active_sets = [None, None, None];
                 let mut set_index = 0;
@@ -261,20 +248,6 @@ fn calculate_cols(
                     (column_type.to_name().to_owned(), params.character_kit.compute_stat_column(column_type, &params.character_state, &params.character_stats, &skill_boosts, &params.enemy_config))
                 }).collect();
 
-                // if let Some(maxv) = &max {
-                //     // for (i, (name, value)) in cols.iter().enumerate() {
-                //     if cols[0].1 > maxv[0].1 {
-                //         max = Some(cols);
-                //         max_relics = Some(relic_perm);
-                //         // max_boosts = Some(boosts);
-                //     }
-                // } else {
-                //     max = Some(cols);
-                //     max_relics = Some(relic_perm);
-                //     // max_boosts = Some(boosts);
-                // }
-
-                // if cols[0].1 > 80000.0 {
                 let result = CalculatorResult {
                     relic_perm: relic_perm.into_iter().map(|(_, i)| i).collect::<Vec<usize>>(), 
                     cols, 
@@ -289,8 +262,6 @@ fn calculate_cols(
                     
                     results.push(Reverse(result));
                 }
-                
-                // }
             }
 
             return results;
@@ -346,10 +317,14 @@ fn calculate_cols(
     return (max_relics.unwrap(), max.unwrap(), max_stats.unwrap());
 }
 
+struct Storage {
+    relics: RwLock<Vec<Relic>>
+}
+
 fn main() {
     let specta_builder = {
         let specta_builder = tauri_specta::ts::builder()
-            .commands(tauri_specta::collect_commands![greet]);
+            .commands(tauri_specta::collect_commands![prank_him_john, get_filtered_relic_count]);
 
         #[cfg(debug_assertions)]
         let specta_builder = specta_builder.path("../src/bindings.gen.ts");
@@ -357,9 +332,12 @@ fn main() {
         specta_builder.into_plugin()
     };
 
+    let all_relics = TEST_SCAN.relics.iter().filter_map(|r| r.to_relic()).collect::<Vec<_>>();
+
     tauri::Builder::default()
+        .manage(Storage { relics: RwLock::new(all_relics) })
         .plugin(specta_builder)
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![prank_him_john, get_filtered_relic_count])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button, Flex, Grid, Heading, TextField, View } from "@adobe/react-spectrum";
-import { commands } from "./bindings.gen";
+import { EffectPropertyType, commands } from "./bindings.gen";
 import { SideNav, SideNavButton } from "./components/SideNav";
 import Beaker from "@spectrum-icons/workflow/Beaker";
 import PeopleGroup from "@spectrum-icons/workflow/PeopleGroup";
@@ -8,13 +8,12 @@ import { MultiComboBox } from "./components/MultiComboBox";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
 
   async function greet() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
     // setGreetMsg(await invoke("greet", { name }));
-    setGreetMsg(await commands.greet(
-      { 
+    setGreetMsg(await commands.prankHimJohn(
+      {
         Jingliu: {
           e1_crit_dmg: true,
           e2_skill_buff: true,
@@ -101,14 +100,18 @@ function App() {
         </View>
         <View gridArea="content">
           <Flex alignItems="end" gap="size-200">
-            <TextField 
-              label="Name"
-              onChange={setName}
-            />
             <Button variant="cta" onPress={() => greet()}>Greet</Button>
           </Flex>
           <p>{greetMsg}</p>
-          <MultiComboBox label="Test" />
+          <MultiComboBox<EffectPropertyType> label="Chest Filter" options={[
+            {label: "CRIT Rate", value: "CriticalChanceBase"},
+            {label: "CRIT DMG", value: "CriticalDamageBase"},
+            {label: "ATK%", value: "AttackAddedRatio"},
+            {label: "DEF%", value: "DefenceAddedRatio"},
+            {label: "HP%", value: "HPAddedRatio"},
+            {label: "Effect Hit Rate", value: "StatusProbabilityBase"},
+            {label: "Outgoing Healing Boost", value: "HealRatioBase"},
+          ]}/>
         </View>
       </Grid>
       
