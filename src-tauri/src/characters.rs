@@ -113,6 +113,8 @@ pub enum StatColumnType {
     SkillHeal,
     SkillShield,
     UltimateDamage,
+    UltimateHeal,
+    UltimateShield,
     FollowUpDamage,
 }
 
@@ -124,6 +126,8 @@ impl StatColumnType {
             StatColumnType::SkillHeal => "Skill Heal",
             StatColumnType::SkillShield => "Skill Shield",
             StatColumnType::UltimateDamage => "Ultimate DMG",
+            StatColumnType::UltimateHeal => "Ultimate Heal",
+            StatColumnType::UltimateShield => "Ultimate Shield",
             StatColumnType::FollowUpDamage => "Follow-Up DMG",
         }
     }
