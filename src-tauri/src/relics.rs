@@ -1,10 +1,25 @@
+pub mod passerby_of_wandering_cloud;
+pub mod musketeer_of_wild_wheat;
+pub mod knight_of_purity_palace;
 pub mod hunter_of_glacial_forest;
+pub mod champion_of_streetwise_boxing;
+pub mod guard_of_wuthering_snow;
+pub mod firesmith_of_lava_forging;
+pub mod genius_of_brilliant_stars;
+pub mod band_of_sizzling_thunder;
+pub mod eagle_of_twilight_line;
+pub mod thief_of_shooting_meteor;
+pub mod wastelander_of_banditry_desert;
+pub mod longevous_disciple;
+pub mod messenger_traversing_hackerspace;
+pub mod the_ashblazing_grand_duke;
+pub mod prisoner_in_deep_confinement;
+
 pub mod space_sealing_station;
 
-use crate::{data_mappings::RelicSet, data::{EffectPropertyType, RelicSlot, Element}, damage::{Level, Boosts, EnemyConfig, CharacterStats}, characters::{apply_effect_boost, StatColumnType}, promotions::CharacterState};
+use crate::{data_mappings::RelicSet, data::{EffectPropertyType, RelicSlot, Element}, damage::{Level, Boosts, EnemyConfig, CharacterStats}, characters::{apply_effect_boost, StatColumnType}};
 
-use self::{space_sealing_station::SpaceSealingStation2Piece, hunter_of_glacial_forest::{HunterOfGlacialForest2Piece, HunterOfGlacialForest4Piece}};
-use lazy_static::lazy_static;
+use self::{space_sealing_station::SPACE_SEALING_STATION_2P, hunter_of_glacial_forest::{HUNTER_OF_GLACIAL_FOREST_2P, HUNTER_OF_GLACIAL_FOREST_4P}, passerby_of_wandering_cloud::PASSERBY_OF_WANDERING_CLOUD_2P, musketeer_of_wild_wheat::{MUSKETEER_OF_WILD_WHEAT_2P, MUSKETEER_OF_WILD_WHEAT_4P}, knight_of_purity_palace::{KNIGHT_OF_PURITY_PALACE_2P, KNIGHT_OF_PURITY_PALACE_4P}, champion_of_streetwise_boxing::{CHAMPION_OF_STREETWISE_BOXING_2P, CHAMPION_OF_STREETWISE_BOXING_4P}, guard_of_wuthering_snow::GUARD_OF_WUTHERING_SNOW_2P, firesmith_of_lava_forging::{FIRESMITH_OF_LAVA_FORGING_2P, FIRESMITH_OF_LAVA_FORGING_4P}, genius_of_brilliant_stars::{GENIUS_OF_BRILLIANT_STARS_2P, GENIUS_OF_BRILLIANT_STARS_4P}, band_of_sizzling_thunder::{BAND_OF_SIZZLING_THUNDER_2P, BAND_OF_SIZZLING_THUNDER_4P}, eagle_of_twilight_line::EAGLE_OF_TWILIGHT_LINE_2P, thief_of_shooting_meteor::{THIEF_OF_SHOOTING_METEOR_2P, THIEF_OF_SHOOTING_METEOR_4P}, wastelander_of_banditry_desert::{WastelanderOfBanditryDesertConditional, WASTELANDER_OF_BANDITRY_DESERT_2P, WASTELANDER_OF_BANDITRY_DESERT_4P}, longevous_disciple::{LONGEVOUS_DISCIPLE_4P, LONGEVOUS_DISCIPLE_2P}, messenger_traversing_hackerspace::{MESSENGER_TRAVERSING_HACKERSPACE_4P, MESSENGER_TRAVERSING_HACKERSPACE_2P}, the_ashblazing_grand_duke::{THE_ASHBLAZING_GRAND_DUKE_2P, THE_ASHBLAZING_GRAND_DUKE_4P}, prisoner_in_deep_confinement::{PRISONER_IN_DEEP_CONFINEMENT_4P, PRISONER_IN_DEEP_CONFINEMENT_2P}};
 
 pub type RelicStat = (EffectPropertyType, f64);
 
@@ -301,25 +316,25 @@ pub trait RelicSetKit {
      * This function is called once for each relic permutation.
      * It should apply relic-set passive effects that affect the character's base stats. (i.e. it shows up in the character's stat sheet)
      */
-    fn apply_base_passives(&self, p: RelicSetKitParams);
-
-    // /**
-    //  * This function is called once for each relic permutation.
-    //  * It should apply relic-set passive effects that affect the character's combat stats. (i.e. it only shows up during combat)
-    //  */
-    // fn apply_base_combat_passives(&self, enemy_config: &EnemyConfig, boosts: &mut Boosts);
+    fn apply_base_passives(&self, _p: RelicSetKitParams) {}
 
     /**
      * This function is called once for each relic permutation.
      * It should apply relic-set effects that are conditional based on relic stats (e.g. +10% DMG when SPD > 160)
      */
-    fn apply_common_conditionals(&self, p: RelicSetKitParams);
+    fn apply_common_conditionals(&self, _p: RelicSetKitParams) {}
 
     /**
      * This function is called multiple times for each relic permutation.
      * It should apply relic-set effects that are conditional based on the type of stat being calculated (e.g. +10% Ultimate DMG)
      */
-    fn apply_stat_type_conditionals(&self, p: RelicSetKitParams, stat_type: StatColumnType);
+    fn apply_stat_type_conditionals(&self, _p: RelicSetKitParams, _stat_type: StatColumnType) {}
+
+    /**
+     * This function is called multiple times for each relic permutation, and per hit split.
+     * Applies effects that stack per hit (I'm looking at you Ashblazing Duke)
+     */
+    fn apply_inter_hit_effects(&self, _split: (usize, &f64), _p: RelicSetKitParams, _stat_type: StatColumnType) {}
 }
 
 impl RelicSetKit for Vec<Box<dyn RelicSetKit>> {
@@ -338,6 +353,12 @@ impl RelicSetKit for Vec<Box<dyn RelicSetKit>> {
     fn apply_stat_type_conditionals(&self, p: RelicSetKitParams, stat_type: StatColumnType) {
         for kit in self.iter() {
             kit.apply_stat_type_conditionals(clone_params!(p), stat_type);
+        }
+    }
+
+    fn apply_inter_hit_effects(&self, split: (usize, &f64), p: RelicSetKitParams, stat_type: StatColumnType) {
+        for kit in self.iter() {
+            kit.apply_inter_hit_effects(split, clone_params!(p), stat_type);
         }
     }
 }
@@ -372,29 +393,61 @@ impl RelicSetKit for [Option<&dyn RelicSetKit>] {
             }
         }
     }
+
+    fn apply_inter_hit_effects(&self, split: (usize, &f64), p: RelicSetKitParams, stat_type: StatColumnType) {
+        for kit in self.iter() {
+            if let Some(kit) = kit {
+                kit.apply_inter_hit_effects(split, clone_params!(p), stat_type);
+            } else {
+                break;
+            }
+        }
+    }
 }
 
-
-static hunter_of_glacial_forest_2p: HunterOfGlacialForest2Piece = HunterOfGlacialForest2Piece;
-static space_sealing_station_2p: SpaceSealingStation2Piece = SpaceSealingStation2Piece;
-
-static hunter_of_glacial_forest_4p: HunterOfGlacialForest4Piece = HunterOfGlacialForest4Piece;
 
 impl RelicSet {
     pub fn get_2p_effect(&self) -> Option<&dyn RelicSetKit> {
         // let x = hunter_of_glacial_forest_2p;
         
         match self {
-            RelicSet::HunterOfGlacialForest => Some(&hunter_of_glacial_forest_2p),
+            RelicSet::PasserbyOfWanderingCloud => Some(&PASSERBY_OF_WANDERING_CLOUD_2P),
+            RelicSet::MusketeerOfWildWheat => Some(&MUSKETEER_OF_WILD_WHEAT_2P),
+            RelicSet::KnightOfPurityPalace => Some(&KNIGHT_OF_PURITY_PALACE_2P),
+            RelicSet::HunterOfGlacialForest => Some(&HUNTER_OF_GLACIAL_FOREST_2P),
+            RelicSet::ChampionOfStreetwiseBoxing => Some(&CHAMPION_OF_STREETWISE_BOXING_2P),
+            RelicSet::GuardOfWutheringSnow => Some(&GUARD_OF_WUTHERING_SNOW_2P),
+            RelicSet::FiresmithOfLavaForging => Some(&FIRESMITH_OF_LAVA_FORGING_2P),
+            RelicSet::GeniusOfBrilliantStars => Some(&GENIUS_OF_BRILLIANT_STARS_2P),
+            RelicSet::BandOfSizzlingThunder => Some(&BAND_OF_SIZZLING_THUNDER_2P),
+            RelicSet::EagleOfTwilightLine => Some(&EAGLE_OF_TWILIGHT_LINE_2P),
+            RelicSet::ThiefOfShootingMeteor => Some(&THIEF_OF_SHOOTING_METEOR_2P),
+            RelicSet::WastelanderOfBanditryDesert => Some(&WASTELANDER_OF_BANDITRY_DESERT_2P),
+            RelicSet::LongevousDisciple => Some(&LONGEVOUS_DISCIPLE_2P),
+            RelicSet::MessengerTraversingHackerspace => Some(&MESSENGER_TRAVERSING_HACKERSPACE_2P),
+            RelicSet::TheAshblazingGrandDuke => Some(&THE_ASHBLAZING_GRAND_DUKE_2P),
+            RelicSet::PrisonerInDeepConfinement => Some(&PRISONER_IN_DEEP_CONFINEMENT_2P),
 
-            RelicSet::SpaceSealingStation => Some(&space_sealing_station_2p),
+            RelicSet::SpaceSealingStation => Some(&SPACE_SEALING_STATION_2P),
             _ => None // TODO: Implement other relic sets
         }
     }
 
     pub fn get_4p_effect(&self) -> Option<&dyn RelicSetKit> {
         match self {
-            RelicSet::HunterOfGlacialForest => Some(&HunterOfGlacialForest4Piece),
+            RelicSet::MusketeerOfWildWheat => Some(&MUSKETEER_OF_WILD_WHEAT_4P),
+            RelicSet::KnightOfPurityPalace => Some(&KNIGHT_OF_PURITY_PALACE_4P),
+            RelicSet::HunterOfGlacialForest => Some(&HUNTER_OF_GLACIAL_FOREST_4P),
+            RelicSet::ChampionOfStreetwiseBoxing => Some(&CHAMPION_OF_STREETWISE_BOXING_4P),
+            RelicSet::FiresmithOfLavaForging => Some(&FIRESMITH_OF_LAVA_FORGING_4P),
+            RelicSet::GeniusOfBrilliantStars => Some(&GENIUS_OF_BRILLIANT_STARS_4P),
+            RelicSet::BandOfSizzlingThunder => Some(&BAND_OF_SIZZLING_THUNDER_4P),
+            RelicSet::ThiefOfShootingMeteor => Some(&THIEF_OF_SHOOTING_METEOR_4P),
+            RelicSet::WastelanderOfBanditryDesert => Some(&WASTELANDER_OF_BANDITRY_DESERT_4P),
+            RelicSet::LongevousDisciple => Some(&LONGEVOUS_DISCIPLE_4P),
+            RelicSet::MessengerTraversingHackerspace => Some(&MESSENGER_TRAVERSING_HACKERSPACE_4P),
+            RelicSet::TheAshblazingGrandDuke => Some(&THE_ASHBLAZING_GRAND_DUKE_4P),
+            RelicSet::PrisonerInDeepConfinement => Some(&PRISONER_IN_DEEP_CONFINEMENT_4P),
 
             _ => None // TODO: Implement other relic sets
         }
@@ -404,12 +457,30 @@ impl RelicSet {
 #[derive(Debug, Clone, Copy)]
 pub struct ConditionalRelicSetEffects {
     pub hunter_of_glacial_forest_4p: bool,
+    pub champion_of_streetwise_boxing_4p_stacks: u8,
+    pub firesmith_of_lava_forging_4p: bool,
+    pub genius_of_brilliant_stars_4p: bool,
+    pub band_of_sizzling_thunder_4p: bool,
+    pub wastelander_of_banditry_desert_4p: WastelanderOfBanditryDesertConditional,
+    pub longevous_disciple_4p_stacks: u8,
+    pub messenger_traversing_hackerspace_4p: bool,
+    pub the_ashblazing_grand_duke_4p_stacks: u8,
+    pub prisoner_in_deep_confinement_4p_stacks: u8,
 }
 
 impl Default for ConditionalRelicSetEffects {
     fn default() -> Self {
         Self { 
-            hunter_of_glacial_forest_4p: true
+            hunter_of_glacial_forest_4p: true,
+            champion_of_streetwise_boxing_4p_stacks: 5,
+            firesmith_of_lava_forging_4p: true,
+            genius_of_brilliant_stars_4p: true,
+            band_of_sizzling_thunder_4p: true,
+            wastelander_of_banditry_desert_4p: WastelanderOfBanditryDesertConditional::None,
+            longevous_disciple_4p_stacks: 2,
+            messenger_traversing_hackerspace_4p: false,
+            the_ashblazing_grand_duke_4p_stacks: 0,
+            prisoner_in_deep_confinement_4p_stacks: 0,
         }
     }
 }

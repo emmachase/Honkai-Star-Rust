@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::{data_mappings::{Character, LightCone}, damage::{Level, Ascension, CharacterStats, Eidolon, Superimposition}, data::{Promotions, PromotionStepSpec, use_character_promotions, use_character, use_light_cone_promotions, CharacterDescriptor, use_character_trace_node, EffectPropertyType}, characters::CharacterTraceIds};
+use crate::{data_mappings::{Character, LightCone}, damage::{Level, Ascension, CharacterStats, Eidolon, Superimposition}, data::{Promotions, PromotionStepSpec, use_character_promotions, use_character, use_light_cone_promotions}};
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, Type)]
 pub struct CharacterSkillState {

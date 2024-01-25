@@ -64,7 +64,7 @@ pub fn apply_effect_boost(effective_element: Element, effect: EffectPropertyType
         EffectPropertyType::HPDelta                   => boosts.hp_flat += value,
         EffectPropertyType::AttackDelta               => boosts.atk_flat += value,
         EffectPropertyType::DefenceDelta              => boosts.def_flat += value,
-        EffectPropertyType::SpeedDelta                => boosts.spd += value,
+        EffectPropertyType::SpeedDelta                => boosts.spd_flat += value,
         EffectPropertyType::HPAddedRatio              => boosts.hp_pct += value,
         EffectPropertyType::AttackAddedRatio          => boosts.atk_pct += value,
         EffectPropertyType::DefenceAddedRatio         => boosts.def_pct += value,
@@ -112,7 +112,8 @@ pub enum StatColumnType {
     SkillDamage,
     SkillHeal,
     SkillShield,
-    UltimateDamage
+    UltimateDamage,
+    FollowUpDamage,
 }
 
 impl StatColumnType {
@@ -123,6 +124,7 @@ impl StatColumnType {
             StatColumnType::SkillHeal => "Skill Heal",
             StatColumnType::SkillShield => "Skill Shield",
             StatColumnType::UltimateDamage => "Ultimate DMG",
+            StatColumnType::FollowUpDamage => "Follow-Up DMG",
         }
     }
 }
@@ -154,7 +156,8 @@ pub trait CharacterKit {
     fn apply_stat_type_conditionals(&self, enemy_config: &EnemyConfig, stat_type: StatColumnType, character_state: &CharacterState, boosts: &mut Boosts);
 
     fn get_stat_columns(&self) -> Vec<StatColumnType>;
-    fn compute_stat_column(&self, column_type: StatColumnType, character_state: &CharacterState, character_stats: &CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64;
+    fn get_hit_split(&self, column_type: StatColumnType) -> &'static [f64];
+    fn compute_stat_column(&self, column_type: StatColumnType, split: (usize, &f64), character_state: &CharacterState, character_stats: &CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64;
 }
 
 #[derive(Debug, Type, Serialize, Deserialize)]

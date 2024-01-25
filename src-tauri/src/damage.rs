@@ -43,7 +43,7 @@ impl CharacterStats {
     }
 
     pub fn spd(&self, boosts: &Boosts) -> f64 {
-        return self.spd + boosts.spd;
+        return self.spd * (1.0 + boosts.spd_pct) + boosts.spd_flat;
     }
 
     pub fn effect_res(&self, boosts: &Boosts) -> f64 {
@@ -99,8 +99,9 @@ pub struct Boosts {
     pub atk_pct: f64,
     pub def_flat: f64,
     pub def_pct: f64,
-    
-    pub spd: f64,
+    pub spd_flat: f64,
+    pub spd_pct: f64,
+
     pub effect_res: f64,
     pub effect_hit_rate: f64,
     pub crit_rate: f64,
@@ -114,6 +115,9 @@ pub struct Boosts {
     pub extra_vulnerability: f64,
     pub def_shred: f64, // enemy def_reduction + attacker def_ignore
     pub res_pen: f64,
+
+    pub shield_pct: f64,
+    pub dmg_reduction: f64,
 }
 
 impl Add for Boosts {
@@ -128,7 +132,9 @@ impl Add for Boosts {
             def_flat: self.def_flat + rhs.def_flat,
             def_pct: self.def_pct + rhs.def_pct,
             
-            spd: self.spd + rhs.spd,
+            spd_flat: self.spd_flat + rhs.spd_flat,
+            spd_pct: self.spd_pct + rhs.spd_pct,
+
             effect_res: self.effect_res + rhs.effect_res,
             effect_hit_rate: self.effect_hit_rate + rhs.effect_hit_rate,
             crit_rate: self.crit_rate + rhs.crit_rate,
@@ -142,6 +148,9 @@ impl Add for Boosts {
             extra_vulnerability: self.extra_vulnerability + rhs.extra_vulnerability,
             def_shred: self.def_shred + rhs.def_shred,
             res_pen: self.res_pen + rhs.res_pen,
+
+            shield_pct: self.shield_pct + rhs.shield_pct,
+            dmg_reduction: self.dmg_reduction + rhs.dmg_reduction,
         }
     }
 }
@@ -211,26 +220,25 @@ fn calculate_common_multiplier(
     return damage_boost * def_multiplier * res_multiplier * vulnerability_multiplier * broken_multiplier;
 }
 
+// /**
+//  * Calculates the damage of a attack ignoring crits (DOT, or normal attack without crits)
+//  */
+// pub fn calculate_damage_common(
+//     base_dmg: f64,
+
+//     character_stats: &CharacterStats,
+//     enemy_config: &EnemyConfig,
+//     boosts: &Boosts,
+// ) -> f64 {
+//     return base_dmg * calculate_common_multiplier(character_stats, enemy_config, boosts);
+// }
+
 /**
- * Calculates the damage of a attack ignoring crits (DOT, or normal attack without crits)
+ * Calculates the damage multiplier of a normal attack (Not DOT)
+ * Crit DMG is applied according to average value based on crit rate.
+ * Should be called once for each type of attack (basic, skill, ult)
  */
-pub fn calculate_damage_common(
-    base_dmg: f64,
-
-    character_stats: &CharacterStats,
-    enemy_config: &EnemyConfig,
-    boosts: &Boosts,
-) -> f64 {
-    return base_dmg * calculate_common_multiplier(character_stats, enemy_config, boosts);
-}
-
-/**
- * Calculates the damage of a normal attack (Not DOT)
- * Called once for each type of attack (basic, skill, ult)
- */
-pub fn calculate_damage_with_avg_crits(
-    base_dmg: f64,
-
+pub fn calc_damage_multiplier(
     character_stats: &CharacterStats,
     enemy_config: &EnemyConfig,
     boosts: &Boosts,
@@ -252,15 +260,13 @@ pub fn calculate_damage_with_avg_crits(
 
     let common_multiplier = calculate_common_multiplier(character_stats, enemy_config, boosts);
 
-    return base_dmg * common_multiplier * crit_multiplier;
+    return common_multiplier * crit_multiplier;
 }
 
 /**
- * Calculates the maximum damage of a normal attack (EQ: CR=1) (Not DOT)
+ * Calculates the maximum damage multiplier of a normal attack (EQ: CR=1) (Not DOT)
  */
-pub fn calculate_damage_with_max_crits(
-    base_dmg: f64,
-
+pub fn calc_max_damage_multiplier(
     character_stats: &CharacterStats,
     enemy_config: &EnemyConfig,
     boosts: &Boosts,
@@ -270,6 +276,6 @@ pub fn calculate_damage_with_max_crits(
 
     let common_multiplier = calculate_common_multiplier(character_stats, enemy_config, boosts);
 
-    return base_dmg * common_multiplier * crit_multiplier;
+    return common_multiplier * crit_multiplier;
 }
 

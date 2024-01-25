@@ -1,6 +1,6 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-#![allow(dead_code)] // TODO: remove
+// #![allow(dead_code)] // TODO: remove
 
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -252,7 +252,21 @@ fn calculate_cols(
                         boosts: &mut skill_boosts,
                     }, column_type);
 
-                    cols.push((column_type, params.character_kit.compute_stat_column(column_type, &params.character_state, &params.character_stats, &skill_boosts, &params.enemy_config)));
+                    let mut col_total = 0.0;
+                    for split in params.character_kit.get_hit_split(column_type).iter().enumerate() {
+                        active_sets.apply_inter_hit_effects(split, RelicSetKitParams {
+                            enemy_config: &params.enemy_config, 
+                            conditionals: &params.relic_conditionals,
+                            character_stats: &params.character_stats, 
+                            character_element: params.character.element, 
+                            boosts: &mut skill_boosts,
+                        }, column_type);
+
+                        col_total += params.character_kit.compute_stat_column(column_type, split, &params.character_state, &params.character_stats, &skill_boosts, &params.enemy_config);
+                    }
+
+                    cols.push((column_type, col_total));
+                    // cols.push((column_type, params.character_kit.compute_stat_column(column_type, (0, &1.0), &params.character_state, &params.character_stats, &skill_boosts, &params.enemy_config)));
                 });
 
                 
