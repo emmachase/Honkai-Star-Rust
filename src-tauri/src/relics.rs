@@ -19,7 +19,30 @@ pub mod space_sealing_station;
 
 use crate::{data_mappings::RelicSet, data::{EffectPropertyType, RelicSlot, Element}, damage::{Level, Boosts, EnemyConfig, CharacterStats}, characters::{apply_effect_boost, StatColumnType}};
 
-use self::{space_sealing_station::SPACE_SEALING_STATION_2P, hunter_of_glacial_forest::{HUNTER_OF_GLACIAL_FOREST_2P, HUNTER_OF_GLACIAL_FOREST_4P}, passerby_of_wandering_cloud::PASSERBY_OF_WANDERING_CLOUD_2P, musketeer_of_wild_wheat::{MUSKETEER_OF_WILD_WHEAT_2P, MUSKETEER_OF_WILD_WHEAT_4P}, knight_of_purity_palace::{KNIGHT_OF_PURITY_PALACE_2P, KNIGHT_OF_PURITY_PALACE_4P}, champion_of_streetwise_boxing::{CHAMPION_OF_STREETWISE_BOXING_2P, CHAMPION_OF_STREETWISE_BOXING_4P}, guard_of_wuthering_snow::GUARD_OF_WUTHERING_SNOW_2P, firesmith_of_lava_forging::{FIRESMITH_OF_LAVA_FORGING_2P, FIRESMITH_OF_LAVA_FORGING_4P}, genius_of_brilliant_stars::{GENIUS_OF_BRILLIANT_STARS_2P, GENIUS_OF_BRILLIANT_STARS_4P}, band_of_sizzling_thunder::{BAND_OF_SIZZLING_THUNDER_2P, BAND_OF_SIZZLING_THUNDER_4P}, eagle_of_twilight_line::EAGLE_OF_TWILIGHT_LINE_2P, thief_of_shooting_meteor::{THIEF_OF_SHOOTING_METEOR_2P, THIEF_OF_SHOOTING_METEOR_4P}, wastelander_of_banditry_desert::{WastelanderOfBanditryDesertConditional, WASTELANDER_OF_BANDITRY_DESERT_2P, WASTELANDER_OF_BANDITRY_DESERT_4P}, longevous_disciple::{LONGEVOUS_DISCIPLE_4P, LONGEVOUS_DISCIPLE_2P}, messenger_traversing_hackerspace::{MESSENGER_TRAVERSING_HACKERSPACE_4P, MESSENGER_TRAVERSING_HACKERSPACE_2P}, the_ashblazing_grand_duke::{THE_ASHBLAZING_GRAND_DUKE_2P, THE_ASHBLAZING_GRAND_DUKE_4P}, prisoner_in_deep_confinement::{PRISONER_IN_DEEP_CONFINEMENT_4P, PRISONER_IN_DEEP_CONFINEMENT_2P}};
+use self::{
+    band_of_sizzling_thunder::{BAND_OF_SIZZLING_THUNDER_2P, BAND_OF_SIZZLING_THUNDER_4P},
+    champion_of_streetwise_boxing::{CHAMPION_OF_STREETWISE_BOXING_2P, CHAMPION_OF_STREETWISE_BOXING_4P},
+    eagle_of_twilight_line::EAGLE_OF_TWILIGHT_LINE_2P,
+    firesmith_of_lava_forging::{FIRESMITH_OF_LAVA_FORGING_2P, FIRESMITH_OF_LAVA_FORGING_4P},
+    genius_of_brilliant_stars::{GENIUS_OF_BRILLIANT_STARS_2P, GENIUS_OF_BRILLIANT_STARS_4P},
+    guard_of_wuthering_snow::GUARD_OF_WUTHERING_SNOW_2P,
+    hunter_of_glacial_forest::{HUNTER_OF_GLACIAL_FOREST_2P, HUNTER_OF_GLACIAL_FOREST_4P},
+    knight_of_purity_palace::{KNIGHT_OF_PURITY_PALACE_2P, KNIGHT_OF_PURITY_PALACE_4P},
+    longevous_disciple::{LONGEVOUS_DISCIPLE_2P, LONGEVOUS_DISCIPLE_4P},
+    messenger_traversing_hackerspace::{MESSENGER_TRAVERSING_HACKERSPACE_2P, MESSENGER_TRAVERSING_HACKERSPACE_4P},
+    musketeer_of_wild_wheat::{MUSKETEER_OF_WILD_WHEAT_2P, MUSKETEER_OF_WILD_WHEAT_4P},
+    passerby_of_wandering_cloud::PASSERBY_OF_WANDERING_CLOUD_2P,
+    prisoner_in_deep_confinement::{PRISONER_IN_DEEP_CONFINEMENT_2P, PRISONER_IN_DEEP_CONFINEMENT_4P},
+    space_sealing_station::SPACE_SEALING_STATION_2P,
+    the_ashblazing_grand_duke::{THE_ASHBLAZING_GRAND_DUKE_2P, THE_ASHBLAZING_GRAND_DUKE_4P},
+    thief_of_shooting_meteor::{THIEF_OF_SHOOTING_METEOR_2P, THIEF_OF_SHOOTING_METEOR_4P},
+    wastelander_of_banditry_desert::{
+        WastelanderOfBanditryDesertConditional, 
+        WASTELANDER_OF_BANDITRY_DESERT_2P,
+        WASTELANDER_OF_BANDITRY_DESERT_4P,
+    },
+};
+
 
 pub type RelicStat = (EffectPropertyType, f64);
 
