@@ -95,7 +95,7 @@ function App() {
         </View>
         <View gridArea="header">
           <Flex alignItems="end" height="100%" marginStart="size-200">
-            <Heading level={2}>Free Honkai Star Rrail Cheat 100% Working Infinite Stellar Jade 2023</Heading>
+            <Heading level={2}>Honkai: Star Rust</Heading>
           </Flex>
         </View>
         <View gridArea="content">

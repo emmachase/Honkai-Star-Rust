@@ -757,22 +757,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "free-honkai-cheat-working-2023"
-version = "0.0.0"
-dependencies = [
- "assert_float_eq",
- "codegen",
- "lazy_static",
- "serde",
- "serde_json",
- "serde_tuple",
- "specta",
- "tauri",
- "tauri-build",
- "tauri-specta",
-]
-
-[[package]]
 name = "futf"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1189,6 +1173,22 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+name = "honkai-star-rust"
+version = "0.0.0"
+dependencies = [
+ "assert_float_eq",
+ "codegen",
+ "lazy_static",
+ "serde",
+ "serde_json",
+ "serde_tuple",
+ "specta",
+ "tauri",
+ "tauri-build",
+ "tauri-specta",
+]
 
 [[package]]
 name = "html5ever"

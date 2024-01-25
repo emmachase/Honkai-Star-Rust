@@ -1,5 +1,5 @@
 [package]
-name = "free-honkai-cheat-working-2023"
+name = "honkai-star-rust"
 version = "0.0.0"
 description = "A Tauri App"
 authors = ["you"]
