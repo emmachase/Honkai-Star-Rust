@@ -50,6 +50,7 @@ function App() {
       {
         IShallBeMyOwnSword: {
           eclipse_stacks: 3,
+          max_stack_def_pen: true,
         }
       },
       {

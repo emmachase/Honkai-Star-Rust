@@ -9,6 +9,7 @@ use super::LightConeKit;
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Type)]
 pub struct IShallBeMyOwnSwordConfig {
     pub eclipse_stacks: u8,
+    pub max_stack_def_pen: bool,
 }
 
 pub struct IShallBeMyOwnSword {
@@ -58,7 +59,7 @@ impl LightConeKit for IShallBeMyOwnSword {
         let desc = self.descriptions[light_cone_state.superimposition as usize];
 
         boosts.all_type_dmg_boost += self.config.eclipse_stacks as f64 * desc.dmg_per_stack;
-        if self.config.eclipse_stacks == desc.max_stacks {
+        if self.config.max_stack_def_pen {
             boosts.def_shred += desc.def_pen_pct;
         }
     }
