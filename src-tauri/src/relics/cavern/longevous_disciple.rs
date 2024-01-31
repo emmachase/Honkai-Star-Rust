@@ -1,6 +1,4 @@
-use crate::data::Element;
-
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{data::Element, relics::{RelicSetKit, RelicSetKitParams}};
 
 pub struct LongevousDisciple2Piece;
 pub struct LongevousDisciple4Piece;

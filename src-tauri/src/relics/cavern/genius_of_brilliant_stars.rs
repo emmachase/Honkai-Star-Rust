@@ -1,6 +1,4 @@
-use crate::data::Element;
-
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{data::Element, relics::{RelicSetKit, RelicSetKitParams}};
 
 pub struct GeniusOfBrilliantStars2Piece;
 pub struct GeniusOfBrilliantStars4Piece;

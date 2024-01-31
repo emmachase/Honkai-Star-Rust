@@ -1,4 +1,4 @@
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{RelicSetKit, RelicSetKitParams};
 
 pub struct ThiefOfShootingMeteor2Piece;
 pub struct ThiefOfShootingMeteor4Piece;

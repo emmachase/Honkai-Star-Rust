@@ -1,4 +1,4 @@
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{RelicSetKit, RelicSetKitParams};
 
 pub struct KnightOfPurityPalace2Piece;
 pub struct KnightOfPurityPalace4Piece;

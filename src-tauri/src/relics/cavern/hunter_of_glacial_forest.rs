@@ -1,6 +1,4 @@
-use crate::data::Element;
-
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{data::Element, relics::{RelicSetKit, RelicSetKitParams}};
 
 pub struct HunterOfGlacialForest2Piece;
 pub struct HunterOfGlacialForest4Piece;

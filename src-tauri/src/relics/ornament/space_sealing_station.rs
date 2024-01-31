@@ -1,9 +1,9 @@
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{RelicSetKit, RelicSetKitParams};
 
-pub struct SpaceSealingStation2Piece;
-pub static SPACE_SEALING_STATION_2P: SpaceSealingStation2Piece = SpaceSealingStation2Piece;
+pub struct SpaceSealingStation;
+pub static SPACE_SEALING_STATION: SpaceSealingStation = SpaceSealingStation;
 
-impl RelicSetKit for SpaceSealingStation2Piece {
+impl RelicSetKit for SpaceSealingStation {
     fn apply_base_passives(&self, p: RelicSetKitParams) {
         p.boosts.atk_pct += 0.12;
     }

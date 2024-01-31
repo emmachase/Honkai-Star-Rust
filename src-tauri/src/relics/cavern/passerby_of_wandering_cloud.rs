@@ -1,4 +1,4 @@
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{RelicSetKit, RelicSetKitParams};
 
 pub struct PasserbyOfWanderingCloud2Piece;
 pub static PASSERBY_OF_WANDERING_CLOUD_2P: PasserbyOfWanderingCloud2Piece = PasserbyOfWanderingCloud2Piece;

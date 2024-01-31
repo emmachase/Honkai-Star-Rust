@@ -1,6 +1,4 @@
-use crate::characters::StatColumnType;
-
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{characters::StatColumnType, relics::{RelicSetKit, RelicSetKitParams}};
 
 pub struct MusketeerOfWildWheat2Piece;
 pub struct MusketeerOfWildWheat4Piece;

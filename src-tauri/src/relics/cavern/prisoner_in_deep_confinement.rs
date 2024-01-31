@@ -1,4 +1,4 @@
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{RelicSetKit, RelicSetKitParams};
 
 pub struct PrisonerInDeepConfinement2Piece;
 pub struct PrisonerInDeepConfinement4Piece;

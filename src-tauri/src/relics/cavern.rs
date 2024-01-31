@@ -1,0 +1,16 @@
+pub mod passerby_of_wandering_cloud;
+pub mod musketeer_of_wild_wheat;
+pub mod knight_of_purity_palace;
+pub mod hunter_of_glacial_forest;
+pub mod champion_of_streetwise_boxing;
+pub mod guard_of_wuthering_snow;
+pub mod firesmith_of_lava_forging;
+pub mod genius_of_brilliant_stars;
+pub mod band_of_sizzling_thunder;
+pub mod eagle_of_twilight_line;
+pub mod thief_of_shooting_meteor;
+pub mod wastelander_of_banditry_desert;
+pub mod longevous_disciple;
+pub mod messenger_traversing_hackerspace;
+pub mod the_ashblazing_grand_duke;
+pub mod prisoner_in_deep_confinement;

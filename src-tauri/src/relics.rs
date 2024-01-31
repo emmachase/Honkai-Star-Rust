@@ -1,46 +1,45 @@
-pub mod passerby_of_wandering_cloud;
-pub mod musketeer_of_wild_wheat;
-pub mod knight_of_purity_palace;
-pub mod hunter_of_glacial_forest;
-pub mod champion_of_streetwise_boxing;
-pub mod guard_of_wuthering_snow;
-pub mod firesmith_of_lava_forging;
-pub mod genius_of_brilliant_stars;
-pub mod band_of_sizzling_thunder;
-pub mod eagle_of_twilight_line;
-pub mod thief_of_shooting_meteor;
-pub mod wastelander_of_banditry_desert;
-pub mod longevous_disciple;
-pub mod messenger_traversing_hackerspace;
-pub mod the_ashblazing_grand_duke;
-pub mod prisoner_in_deep_confinement;
-
-pub mod space_sealing_station;
+pub mod cavern;
+pub mod ornament;
 
 use crate::{data_mappings::RelicSet, data::{EffectPropertyType, RelicSlot, Element}, damage::{Level, Boosts, EnemyConfig, CharacterStats}, characters::{apply_effect_boost, StatColumnType}};
 
 use self::{
-    band_of_sizzling_thunder::{BAND_OF_SIZZLING_THUNDER_2P, BAND_OF_SIZZLING_THUNDER_4P},
-    champion_of_streetwise_boxing::{CHAMPION_OF_STREETWISE_BOXING_2P, CHAMPION_OF_STREETWISE_BOXING_4P},
-    eagle_of_twilight_line::EAGLE_OF_TWILIGHT_LINE_2P,
-    firesmith_of_lava_forging::{FIRESMITH_OF_LAVA_FORGING_2P, FIRESMITH_OF_LAVA_FORGING_4P},
-    genius_of_brilliant_stars::{GENIUS_OF_BRILLIANT_STARS_2P, GENIUS_OF_BRILLIANT_STARS_4P},
-    guard_of_wuthering_snow::GUARD_OF_WUTHERING_SNOW_2P,
-    hunter_of_glacial_forest::{HUNTER_OF_GLACIAL_FOREST_2P, HUNTER_OF_GLACIAL_FOREST_4P},
-    knight_of_purity_palace::{KNIGHT_OF_PURITY_PALACE_2P, KNIGHT_OF_PURITY_PALACE_4P},
-    longevous_disciple::{LONGEVOUS_DISCIPLE_2P, LONGEVOUS_DISCIPLE_4P},
-    messenger_traversing_hackerspace::{MESSENGER_TRAVERSING_HACKERSPACE_2P, MESSENGER_TRAVERSING_HACKERSPACE_4P},
-    musketeer_of_wild_wheat::{MUSKETEER_OF_WILD_WHEAT_2P, MUSKETEER_OF_WILD_WHEAT_4P},
-    passerby_of_wandering_cloud::PASSERBY_OF_WANDERING_CLOUD_2P,
-    prisoner_in_deep_confinement::{PRISONER_IN_DEEP_CONFINEMENT_2P, PRISONER_IN_DEEP_CONFINEMENT_4P},
-    space_sealing_station::SPACE_SEALING_STATION_2P,
-    the_ashblazing_grand_duke::{THE_ASHBLAZING_GRAND_DUKE_2P, THE_ASHBLAZING_GRAND_DUKE_4P},
-    thief_of_shooting_meteor::{THIEF_OF_SHOOTING_METEOR_2P, THIEF_OF_SHOOTING_METEOR_4P},
-    wastelander_of_banditry_desert::{
-        WastelanderOfBanditryDesertConditional,
-        WASTELANDER_OF_BANDITRY_DESERT_2P,
-        WASTELANDER_OF_BANDITRY_DESERT_4P,
+    cavern::{
+        band_of_sizzling_thunder::{BAND_OF_SIZZLING_THUNDER_2P, BAND_OF_SIZZLING_THUNDER_4P},
+        champion_of_streetwise_boxing::{CHAMPION_OF_STREETWISE_BOXING_2P, CHAMPION_OF_STREETWISE_BOXING_4P},
+        eagle_of_twilight_line::EAGLE_OF_TWILIGHT_LINE_2P,
+        firesmith_of_lava_forging::{FIRESMITH_OF_LAVA_FORGING_2P, FIRESMITH_OF_LAVA_FORGING_4P},
+        genius_of_brilliant_stars::{GENIUS_OF_BRILLIANT_STARS_2P, GENIUS_OF_BRILLIANT_STARS_4P},
+        guard_of_wuthering_snow::GUARD_OF_WUTHERING_SNOW_2P,
+        hunter_of_glacial_forest::{HUNTER_OF_GLACIAL_FOREST_2P, HUNTER_OF_GLACIAL_FOREST_4P},
+        knight_of_purity_palace::{KNIGHT_OF_PURITY_PALACE_2P, KNIGHT_OF_PURITY_PALACE_4P},
+        longevous_disciple::{LONGEVOUS_DISCIPLE_2P, LONGEVOUS_DISCIPLE_4P},
+        messenger_traversing_hackerspace::{MESSENGER_TRAVERSING_HACKERSPACE_2P, MESSENGER_TRAVERSING_HACKERSPACE_4P},
+        musketeer_of_wild_wheat::{MUSKETEER_OF_WILD_WHEAT_2P, MUSKETEER_OF_WILD_WHEAT_4P},
+        passerby_of_wandering_cloud::PASSERBY_OF_WANDERING_CLOUD_2P,
+        prisoner_in_deep_confinement::{PRISONER_IN_DEEP_CONFINEMENT_2P, PRISONER_IN_DEEP_CONFINEMENT_4P},
+        the_ashblazing_grand_duke::{THE_ASHBLAZING_GRAND_DUKE_2P, THE_ASHBLAZING_GRAND_DUKE_4P},
+        thief_of_shooting_meteor::{THIEF_OF_SHOOTING_METEOR_2P, THIEF_OF_SHOOTING_METEOR_4P},
+        wastelander_of_banditry_desert::{
+            WastelanderOfBanditryDesertConditional,
+            WASTELANDER_OF_BANDITRY_DESERT_2P,
+            WASTELANDER_OF_BANDITRY_DESERT_4P,
+        },
     },
+    ornament::{
+        space_sealing_station::SPACE_SEALING_STATION,
+        fleet_of_the_ageless::FLEET_OF_THE_AGELESS,
+        pan_cosmic_commercial_enterprise::PAN_COSMIC_COMMERCIAL_ENTERPRISE,
+        belobog_of_the_architects::BELOBOG_OF_THE_ARCHITECTS,
+        celestial_differentiator::CELESTIAL_DIFFERENTIATOR,
+        inert_salsotto::INERT_SALSOTTO,
+        talia_kingdom_of_banditry::TALIA_KINGDOM_OF_BANDITRY,
+        sprightly_vonwacq::SPRIGHTLY_VONWACQ,
+        rutilant_arena::RUTILANT_ARENA,
+        broken_keel::BROKEN_KEEL,
+        firmament_frontline_glamoth::FIRMAMENT_FRONTLINE_GLAMOTH,
+        penacony_land_of_the_dreams::PENACONY_LAND_OF_THE_DREAMS,
+    }
 };
 
 
@@ -431,8 +430,6 @@ impl RelicSetKit for [Option<&dyn RelicSetKit>] {
 
 impl RelicSet {
     pub fn get_2p_effect(&self) -> Option<&dyn RelicSetKit> {
-        // let x = hunter_of_glacial_forest_2p;
-
         match self {
             RelicSet::PasserbyOfWanderingCloud => Some(&PASSERBY_OF_WANDERING_CLOUD_2P),
             RelicSet::MusketeerOfWildWheat => Some(&MUSKETEER_OF_WILD_WHEAT_2P),
@@ -451,8 +448,18 @@ impl RelicSet {
             RelicSet::TheAshblazingGrandDuke => Some(&THE_ASHBLAZING_GRAND_DUKE_2P),
             RelicSet::PrisonerInDeepConfinement => Some(&PRISONER_IN_DEEP_CONFINEMENT_2P),
 
-            RelicSet::SpaceSealingStation => Some(&SPACE_SEALING_STATION_2P),
-            _ => None // TODO: Implement other relic sets
+            RelicSet::SpaceSealingStation => Some(&SPACE_SEALING_STATION),
+            RelicSet::FleetOfTheAgeless => Some(&FLEET_OF_THE_AGELESS),
+            RelicSet::PanCosmicCommercialEnterprise => Some(&PAN_COSMIC_COMMERCIAL_ENTERPRISE),
+            RelicSet::BelobogOfTheArchitects => Some(&BELOBOG_OF_THE_ARCHITECTS),
+            RelicSet::CelestialDifferentiator => Some(&CELESTIAL_DIFFERENTIATOR),
+            RelicSet::InertSalsotto => Some(&INERT_SALSOTTO),
+            RelicSet::TaliaKingdomOfBanditry => Some(&TALIA_KINGDOM_OF_BANDITRY),
+            RelicSet::SprightlyVonwacq => Some(&SPRIGHTLY_VONWACQ),
+            RelicSet::RutilantArena => Some(&RUTILANT_ARENA),
+            RelicSet::BrokenKeel => Some(&BROKEN_KEEL),
+            RelicSet::FirmamentFrontlineGlamoth => Some(&FIRMAMENT_FRONTLINE_GLAMOTH),
+            RelicSet::PenaconyLandOfTheDreams => Some(&PENACONY_LAND_OF_THE_DREAMS),
         }
     }
 
@@ -472,7 +479,23 @@ impl RelicSet {
             RelicSet::TheAshblazingGrandDuke => Some(&THE_ASHBLAZING_GRAND_DUKE_4P),
             RelicSet::PrisonerInDeepConfinement => Some(&PRISONER_IN_DEEP_CONFINEMENT_4P),
 
-            _ => None // TODO: Implement other relic sets
+            // No 4p effect on these.
+            // Manually list them here so we get a compiler error if we add a new relic set without accounting for it.
+            RelicSet::PasserbyOfWanderingCloud      |
+            RelicSet::GuardOfWutheringSnow          |
+            RelicSet::EagleOfTwilightLine           |
+            RelicSet::SpaceSealingStation           |
+            RelicSet::FleetOfTheAgeless             |
+            RelicSet::PanCosmicCommercialEnterprise |
+            RelicSet::BelobogOfTheArchitects        |
+            RelicSet::CelestialDifferentiator       |
+            RelicSet::InertSalsotto                 |
+            RelicSet::TaliaKingdomOfBanditry        |
+            RelicSet::SprightlyVonwacq              |
+            RelicSet::RutilantArena                 |
+            RelicSet::BrokenKeel                    |
+            RelicSet::FirmamentFrontlineGlamoth     |
+            RelicSet::PenaconyLandOfTheDreams       => None,
         }
     }
 }
@@ -489,6 +512,8 @@ pub struct ConditionalRelicSetEffects {
     pub messenger_traversing_hackerspace_4p: bool,
     pub the_ashblazing_grand_duke_4p_stacks: u8,
     pub prisoner_in_deep_confinement_4p_stacks: u8,
+
+    pub celestial_differentiator: bool,
 }
 
 impl Default for ConditionalRelicSetEffects {
@@ -504,6 +529,8 @@ impl Default for ConditionalRelicSetEffects {
             messenger_traversing_hackerspace_4p: false,
             the_ashblazing_grand_duke_4p_stacks: 0,
             prisoner_in_deep_confinement_4p_stacks: 0,
+
+            celestial_differentiator: false,
         }
     }
 }

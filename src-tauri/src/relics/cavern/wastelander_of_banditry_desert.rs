@@ -1,6 +1,4 @@
-use crate::data::Element;
-
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{data::Element, relics::{RelicSetKit, RelicSetKitParams}};
 
 #[derive(Debug, Copy, Clone)]
 pub enum WastelanderOfBanditryDesertConditional {

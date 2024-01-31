@@ -1,6 +1,4 @@
-use crate::data::Element;
-
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{data::Element, relics::{RelicSetKit, RelicSetKitParams}};
 
 pub struct FiresmithOfLavaForging2Piece;
 pub struct FiresmithOfLavaForging4Piece;

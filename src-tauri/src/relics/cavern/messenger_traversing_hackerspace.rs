@@ -1,4 +1,4 @@
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{RelicSetKit, RelicSetKitParams};
 
 pub struct MessengerTraversingHackerspace2Piece;
 pub struct MessengerTraversingHackerspace4Piece;

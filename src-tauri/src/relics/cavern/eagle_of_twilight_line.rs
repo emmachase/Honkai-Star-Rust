@@ -1,6 +1,4 @@
-use crate::data::Element;
-
-use super::{RelicSetKit, RelicSetKitParams};
+use crate::{data::Element, relics::{RelicSetKit, RelicSetKitParams}};
 
 pub struct EagleOfTwilightLine2Piece;
 pub static EAGLE_OF_TWILIGHT_LINE_2P: EagleOfTwilightLine2Piece = EagleOfTwilightLine2Piece;
