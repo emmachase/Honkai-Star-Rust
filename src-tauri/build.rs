@@ -45,7 +45,7 @@ fn gen_enum(scope: &mut Scope, name: &str, json: &str, name_mapper: fn(&IdNameDe
         .collect::<Vec<_>>();
     relic_sets.sort_by(|a, b| a.id.cmp(&b.id));
 
-    
+
     let relic_enum = scope.new_enum(name).vis("pub");
     relic_enum.derive("Debug").derive("Clone").derive("Copy").derive("PartialEq").derive("Eq").derive("Hash").derive("Serialize").derive("Deserialize").derive("Type");
     for relic_set in &relic_sets {

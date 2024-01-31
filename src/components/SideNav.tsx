@@ -13,7 +13,7 @@ const SideNavContext = React.createContext<SideNavContextValue>({} as SideNavCon
 
 export function SideNavButton(props: PropsWithChildren<{ id: string }>) {
     const { selected, setSelected } = React.useContext(SideNavContext);
-    
+
     return <Button
         className="w-full text-left rounded-md outline-none ring-inset ring-blue-500 focus-visible:ring-2 hocus:bg-neutral-700 selected:bg-neutral-700"
         data-selected={selected === props.id || null}
@@ -25,7 +25,7 @@ export function SideNavButton(props: PropsWithChildren<{ id: string }>) {
     </Button>
 }
 
-export function SideNav(props: { 
+export function SideNav(props: {
     children: React.ReactNode,
     default: string,
 }) {

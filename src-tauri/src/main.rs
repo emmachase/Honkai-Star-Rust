@@ -7,7 +7,7 @@ use std::collections::BinaryHeap;
 use std::sync::RwLock;
 use std::{thread, sync::Arc};
 
-use characters::{CharacterKit, CharacterConfig, StatColumnType};
+use characters::{CharacterKit, CharacterConfig, StatColumnType, StatColumnDesc};
 use damage::CharacterStats;
 use data::{CharacterDescriptor, RelicSlot, EffectPropertyType};
 use data_mappings::RelicSet;
@@ -38,10 +38,10 @@ mod relics;
 #[specta::specta]
 fn prank_him_john(
     storage: State<Storage>,
-    character_cfg: CharacterConfig, 
-    character_state: CharacterState, 
-    light_cone_cfg: LightConeConfig, 
-    light_cone_state: LightConeState, 
+    character_cfg: CharacterConfig,
+    character_state: CharacterState,
+    light_cone_cfg: LightConeConfig,
+    light_cone_state: LightConeState,
     enemy_config: EnemyConfig
 ) -> String {
     let character_id = character_cfg.get_character_id();
@@ -59,21 +59,21 @@ fn prank_him_john(
     let relics_by_slot = vec![
         all_relics.clone().into_iter().filter(|r| r.slot == RelicSlot::Head).collect::<Vec<_>>(),
         all_relics.clone().into_iter().filter(|r| r.slot == RelicSlot::Hands).collect::<Vec<_>>(),
-        all_relics.clone().into_iter().filter(|r| 
-            r.slot == RelicSlot::Chest 
+        all_relics.clone().into_iter().filter(|r|
+            r.slot == RelicSlot::Chest
                 && (
                     r.main_stat.0 == EffectPropertyType::CriticalChanceBase ||
                     r.main_stat.0 == EffectPropertyType::CriticalDamageBase
                 )
         ).collect::<Vec<_>>(),
-        all_relics.clone().into_iter().filter(|r| 
-            r.slot == RelicSlot::Feet 
+        all_relics.clone().into_iter().filter(|r|
+            r.slot == RelicSlot::Feet
                 && (
                     r.main_stat.0 == EffectPropertyType::SpeedDelta
                 )
         ).collect::<Vec<_>>(),
-        all_relics.clone().into_iter().filter(|r| 
-            r.slot == RelicSlot::PlanarSphere 
+        all_relics.clone().into_iter().filter(|r|
+            r.slot == RelicSlot::PlanarSphere
                 && (
                     r.main_stat.0 == EffectPropertyType::IceAddedRatio ||
                     r.main_stat.0 == EffectPropertyType::AttackAddedRatio
@@ -168,7 +168,7 @@ fn calculate_cols(
     relics: Vec<Vec<Relic>>,
 ) -> (Vec<Relic>, Vec<(String, f64)>, (CharacterStats, CharacterStats)) {
     let mut base_boosts = Boosts::default();
-    
+
     apply_minor_trace_effects(&params.character, &params.character_state, &mut base_boosts);
     params.light_cone_kit.apply_base_passives(&params.enemy_config, &params.light_cone_state, &mut base_boosts);
     params.character_kit.apply_base_passives(&params.enemy_config, &params.character_state, &mut base_boosts);
@@ -186,7 +186,7 @@ fn calculate_cols(
     for tid in 0..thread_count {
         let params = params.clone();
         let relics = relics.clone();
-        let kit_cols = params.character_kit.get_stat_columns();
+        let kit_cols = params.character_kit.get_stat_columns(&params.enemy_config);
         let batches = batches.clone();
         threads.push(thread::spawn(move || {
             let mut results: BinaryHeap<Reverse<CalculatorResult>> = BinaryHeap::new(); // Reverse gives us a min-heap
@@ -206,25 +206,25 @@ fn calculate_cols(
 
                     sets[relic.set as usize] += 1;
                     let p = sets[relic.set as usize];
-                    
+
                     if p == 2 {
-                        if let Some(effect) = relic.set.get_2p_effect() { 
-                            active_sets[set_index] = Some(effect); 
+                        if let Some(effect) = relic.set.get_2p_effect() {
+                            active_sets[set_index] = Some(effect);
                             set_index += 1;
                         }
                     } else if p == 4 {
-                        if let Some(effect) = relic.set.get_4p_effect() { 
-                            active_sets[set_index] = Some(effect); 
+                        if let Some(effect) = relic.set.get_4p_effect() {
+                            active_sets[set_index] = Some(effect);
                             set_index += 1;
                         }
                     }
                 }
 
                 active_sets.apply_base_passives(RelicSetKitParams {
-                    enemy_config: &params.enemy_config, 
+                    enemy_config: &params.enemy_config,
                     conditionals: &params.relic_conditionals,
-                    character_stats: &params.character_stats, 
-                    character_element: params.character.element, 
+                    character_stats: &params.character_stats,
+                    character_element: params.character.element,
                     boosts: &mut base_boosts,
                 });
 
@@ -232,33 +232,35 @@ fn calculate_cols(
                 params.light_cone_kit.apply_common_conditionals(&params.enemy_config, &params.light_cone_state, &mut total_combat_boosts);
                 params.character_kit.apply_common_conditionals(&params.enemy_config, &params.character_state, &mut total_combat_boosts);
                 active_sets.apply_common_conditionals(RelicSetKitParams {
-                    enemy_config: &params.enemy_config, 
+                    enemy_config: &params.enemy_config,
                     conditionals: &params.relic_conditionals,
-                    character_stats: &params.character_stats, 
-                    character_element: params.character.element, 
+                    character_stats: &params.character_stats,
+                    character_element: params.character.element,
                     boosts: &mut total_combat_boosts,
                 });
 
                 cols.clear();
-                kit_cols.iter().for_each(|&column_type| {
+                kit_cols.iter().for_each(|StatColumnDesc { column_type, hit_splits }| {
                     let mut skill_boosts = total_combat_boosts.clone();
+                    let column_type = *column_type;
+
                     params.light_cone_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.light_cone_state, &mut skill_boosts);
                     params.character_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.character_state, &mut skill_boosts);
                     active_sets.apply_stat_type_conditionals(RelicSetKitParams {
-                        enemy_config: &params.enemy_config, 
+                        enemy_config: &params.enemy_config,
                         conditionals: &params.relic_conditionals,
-                        character_stats: &params.character_stats, 
-                        character_element: params.character.element, 
+                        character_stats: &params.character_stats,
+                        character_element: params.character.element,
                         boosts: &mut skill_boosts,
                     }, column_type);
 
                     let mut col_total = 0.0;
-                    for split in params.character_kit.get_hit_split(column_type).iter().enumerate() {
+                    for split in hit_splits.iter().enumerate() {
                         active_sets.apply_inter_hit_effects(split, RelicSetKitParams {
-                            enemy_config: &params.enemy_config, 
+                            enemy_config: &params.enemy_config,
                             conditionals: &params.relic_conditionals,
-                            character_stats: &params.character_stats, 
-                            character_element: params.character.element, 
+                            character_stats: &params.character_stats,
+                            character_element: params.character.element,
                             boosts: &mut skill_boosts,
                         }, column_type);
 
@@ -269,12 +271,12 @@ fn calculate_cols(
                     // cols.push((column_type, params.character_kit.compute_stat_column(column_type, (0, &1.0), &params.character_state, &params.character_stats, &skill_boosts, &params.enemy_config)));
                 });
 
-                
+
 
                 let cur_min = results.peek();
                 if cur_min.is_none() || cur_min.unwrap().0.get_comparable() < cols[0].1 { // result.get_comparable() {
                     let result = CalculatorResult {
-                        relic_perm: relic_perm.into_iter().map(|(_, i)| i).collect::<Vec<usize>>(), 
+                        relic_perm: relic_perm.into_iter().map(|(_, i)| i).collect::<Vec<usize>>(),
                         cols: cols.clone().into_iter().map(|(column_type, value)| (column_type.to_name().to_owned(), value)).collect::<Vec<_>>(),
                         calculated_stats: (params.character_stats + base_boosts, params.character_stats + total_combat_boosts)
                     };
@@ -282,7 +284,7 @@ fn calculate_cols(
                     if results.len() >= top_k {
                         results.pop(); // Remove the smallest element
                     }
-                    
+
                     results.push(Reverse(result));
                 }
             }
@@ -316,7 +318,7 @@ fn calculate_cols(
         }
     }
 
-    
+
     // let mut max_boosts: Option<Boosts> = None;
 
     // for relic_perm in relics.permutations() {

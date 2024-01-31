@@ -55,7 +55,7 @@ pub fn promote<Spec>(promotions: &Promotions<Spec>, level: Level, ascension: Asc
 
 pub fn calculate_character_base_stats(character: (Character, CharacterState), light_cone: Option<(LightCone, LightConeState)>) -> CharacterStats {
     let (character, character_state) = character;
-    
+
     let character_promotions = use_character_promotions(character);
     let character = use_character(character);
 
@@ -99,7 +99,7 @@ mod test {
     #[test]
     fn test_calculate_character_base_stats() {
         let character = (Character::Jingliu, CharacterState {
-            level: 67 as Level, 
+            level: 67 as Level,
             ascension: 5 as Ascension,
             eidolon: 0 as Eidolon,
             skills: CharacterSkillState {

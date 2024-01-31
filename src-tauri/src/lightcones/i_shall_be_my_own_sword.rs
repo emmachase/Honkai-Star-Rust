@@ -27,10 +27,10 @@ impl IShallBeMyOwnSword {
 }
 
 /**
- * Increases the wearer's CRIT DMG by #1[i]%. When an ally (excluding the wearer) gets 
- * attacked or loses HP, the wearer gains 1 stack of Eclipse, up to a max of #2[i] stack(s). 
- * Each stack of Eclipse increases the DMG of the wearer's next attack by #3[f1]%. When #2[i] 
- * stack(s) are reached, additionally enables that attack to ignore #4[i]% of the enemy's DEF. 
+ * Increases the wearer's CRIT DMG by #1[i]%. When an ally (excluding the wearer) gets
+ * attacked or loses HP, the wearer gains 1 stack of Eclipse, up to a max of #2[i] stack(s).
+ * Each stack of Eclipse increases the DMG of the wearer's next attack by #3[f1]%. When #2[i]
+ * stack(s) are reached, additionally enables that attack to ignore #4[i]% of the enemy's DEF.
  * This effect will be removed after the wearer uses an attack.
  */
 #[derive(Debug, Clone, Copy, Deserialize_tuple)]

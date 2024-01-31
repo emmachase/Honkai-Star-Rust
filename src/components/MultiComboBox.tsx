@@ -42,7 +42,7 @@ export function MultiComboBox<V extends string = string>(props: {
                 {selectedKeys.map(k => <li key={k}>{k}</li>)}
             </ul> */}
             <Flex gap={"size-100"}>
-                {selectedKeys.map(k => 
+                {selectedKeys.map(k =>
                     <Button variant="secondary" key={k} onPress={() => {
                         setSelectedKeys((keys) => keys.filter(k2 => k2 !== k))
                     }}>

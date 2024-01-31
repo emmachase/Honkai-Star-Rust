@@ -133,6 +133,21 @@ impl StatColumnType {
     }
 }
 
+pub struct StatColumnDesc {
+    pub column_type: StatColumnType,
+    pub hit_splits: Vec<f64>
+}
+
+#[macro_export]
+macro_rules! col {
+    ($column_type:ident: [$($hit_split:expr),*]) => {
+        StatColumnDesc {
+            column_type: StatColumnType::$column_type,
+            hit_splits: vec![$($hit_split),*]
+        }
+    };
+}
+
 pub trait CharacterKit {
     /**
      * This function is called once outside of the permutation loop.
@@ -159,8 +174,8 @@ pub trait CharacterKit {
      */
     fn apply_stat_type_conditionals(&self, enemy_config: &EnemyConfig, stat_type: StatColumnType, character_state: &CharacterState, boosts: &mut Boosts);
 
-    fn get_stat_columns(&self) -> Vec<StatColumnType>;
-    fn get_hit_split(&self, column_type: StatColumnType) -> &'static [f64];
+    fn get_stat_columns(&self, enemy_config: &EnemyConfig) -> Vec<StatColumnDesc>;
+    // fn get_hit_split(&self, column_type: StatColumnType) -> Vec<f64>;
     fn compute_stat_column(&self, column_type: StatColumnType, split: (usize, &f64), character_state: &CharacterState, character_stats: &CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64;
 }
 

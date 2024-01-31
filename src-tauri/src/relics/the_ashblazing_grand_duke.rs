@@ -15,6 +15,12 @@ impl RelicSetKit for TheAshblazingGrandDuke2Piece {
     }
 }
 
+/**
+ * — The stack applies *before* the hit deals its damage.
+ * — Blast/AoE attacks can gain stacks from hitting multiple targets.
+ * — A Blast/AoE attack that hits multiple targets simultaneously increments its stacks in a left-to-right order (based on player PoV).
+ */
+
 impl RelicSetKit for TheAshblazingGrandDuke4Piece {
     fn apply_stat_type_conditionals(&self, p: RelicSetKitParams, stat_type: StatColumnType) {
         if stat_type != StatColumnType::FollowUpDamage {

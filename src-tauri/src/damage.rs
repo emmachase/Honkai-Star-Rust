@@ -131,7 +131,7 @@ impl Add for Boosts {
             atk_pct: self.atk_pct + rhs.atk_pct,
             def_flat: self.def_flat + rhs.def_flat,
             def_pct: self.def_pct + rhs.def_pct,
-            
+
             spd_flat: self.spd_flat + rhs.spd_flat,
             spd_pct: self.spd_pct + rhs.spd_pct,
 

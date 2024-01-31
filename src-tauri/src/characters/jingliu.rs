@@ -2,9 +2,9 @@ use serde::{Deserialize, Serialize};
 use serde_tuple::Deserialize_tuple;
 use specta::Type;
 
-use crate::{damage::{Boosts, calc_damage_multiplier, EnemyConfig, CharacterStats}, promotions::CharacterState, data::{use_character, use_character_skill}, data_mappings::Character, util::deserialize::deserialize_u8};
+use crate::{damage::{Boosts, calc_damage_multiplier, EnemyConfig, CharacterStats}, promotions::CharacterState, data::{use_character, use_character_skill}, data_mappings::Character, util::deserialize::deserialize_u8, col};
 
-use super::{CharacterKit, StatColumnType};
+use super::{CharacterKit, StatColumnType, StatColumnDesc};
 
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Type)]
 pub struct JingliuConfig {
@@ -38,7 +38,7 @@ struct BasicDesc {
 }
 
 /**
- * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy and obtains #2[i] stack(s) of Syzygy. 
+ * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy and obtains #2[i] stack(s) of Syzygy.
  */
 #[derive(Debug, Clone, Copy, Deserialize_tuple)]
 struct NormalSkillDesc {
@@ -48,8 +48,8 @@ struct NormalSkillDesc {
 }
 
 /**
- * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy, and deals Ice DMG equal to #3[i]% 
- * of Jingliu's ATK to any adjacent enemies. Gains #2[i] stack(s) of Syzygy after attack ends. 
+ * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy, and deals Ice DMG equal to #3[i]%
+ * of Jingliu's ATK to any adjacent enemies. Gains #2[i] stack(s) of Syzygy after attack ends.
  */
 #[derive(Debug, Clone, Copy, Deserialize_tuple)]
 struct UltimateDesc {
@@ -61,15 +61,15 @@ struct UltimateDesc {
 }
 
 /**
- * When Jingliu has #5[i] stack(s) of Syzygy, she enters the Spectral Transmigration state with her 
- * Action Advanced by #6[i]% and her CRIT Rate increases by #7[i]%. Then, Jingliu's Skill 
- * \"Transcendent Flash\" is enhanced to \"Moon On Glacial River,\" and only this enhanced Skill is 
- * available for use in battle. When Jingliu uses an attack in the Spectral Transmigration state, 
- * she consumes HP from all other allies equal to #2[i]% of their respective Max HP (this cannot 
- * reduce allies' HP to lower than 1). Jingliu's ATK increases by #3[i]% of the total HP consumed 
- * from all allies in this attack, capped at #4[i]% of her base ATK, lasting until the current attack 
- * ends. Jingliu cannot enter the Spectral Transmigration state again until the current 
- * Spectral Transmigration state ends. Syzygy can stack up to 3 times. When Syzygy stacks become 0, 
+ * When Jingliu has #5[i] stack(s) of Syzygy, she enters the Spectral Transmigration state with her
+ * Action Advanced by #6[i]% and her CRIT Rate increases by #7[i]%. Then, Jingliu's Skill
+ * \"Transcendent Flash\" is enhanced to \"Moon On Glacial River,\" and only this enhanced Skill is
+ * available for use in battle. When Jingliu uses an attack in the Spectral Transmigration state,
+ * she consumes HP from all other allies equal to #2[i]% of their respective Max HP (this cannot
+ * reduce allies' HP to lower than 1). Jingliu's ATK increases by #3[i]% of the total HP consumed
+ * from all allies in this attack, capped at #4[i]% of her base ATK, lasting until the current attack
+ * ends. Jingliu cannot enter the Spectral Transmigration state again until the current
+ * Spectral Transmigration state ends. Syzygy can stack up to 3 times. When Syzygy stacks become 0,
  * Jingliu will exit the Spectral Transmigration state.
  */
 #[derive(Debug, Clone, Copy, Deserialize_tuple)]
@@ -85,8 +85,8 @@ struct TalentDesc {
 }
 
 /**
- * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy, and deals Ice DMG equal 
- * to #3[i]% of Jingliu's ATK to adjacent enemies. Consumes #2[i] stack(s) of Syzygy. Using 
+ * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy, and deals Ice DMG equal
+ * to #3[i]% of Jingliu's ATK to adjacent enemies. Consumes #2[i] stack(s) of Syzygy. Using
  * this ability does not consume Skill Points.
  */
 #[derive(Debug, Clone, Copy, Deserialize_tuple)]
@@ -122,10 +122,6 @@ impl JingliuDescriptions {
 }
 
 // TODO: get descs from type instead of order
-
-const BASIC_DAMAGE_SPLIT   : [f64; 2] = [0.3, 0.7];
-const SKILL_DAMAGE_SPLIT   : [f64; 5] = [0.1, 0.1, 0.1, 0.2, 0.5];
-const ULTIMATE_DAMAGE_SPLIT: [f64; 1] = [1.0];
 
 impl CharacterKit for Jingliu {
     fn apply_base_passives(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {
@@ -180,27 +176,18 @@ impl CharacterKit for Jingliu {
         }
     }
 
-    fn get_stat_columns(&self) -> Vec<StatColumnType> {
+    fn get_stat_columns(&self, _enemy_config: &EnemyConfig) -> Vec<StatColumnDesc> {
         return if self.config.enhanced_state {
             vec![
-                StatColumnType::SkillDamage,
-                StatColumnType::UltimateDamage
+                col! { SkillDamage: [0.1, 0.1, 0.1, 0.2, 0.5] },
+                col! { UltimateDamage: [1.0] },
             ]
         } else {
             vec![
-                StatColumnType::BasicDamage,
-                StatColumnType::SkillDamage,
-                StatColumnType::UltimateDamage,
+                col! { BasicDamage: [0.3, 0.7] },
+                col! { SkillDamage: [0.1, 0.1, 0.1, 0.2, 0.5] },
+                col! { UltimateDamage: [1.0] },
             ]
-        }
-    }
-
-    fn get_hit_split(&self, column_type: StatColumnType) -> &'static [f64] {
-        match column_type {
-            StatColumnType::BasicDamage    => &BASIC_DAMAGE_SPLIT,
-            StatColumnType::SkillDamage    => &SKILL_DAMAGE_SPLIT,
-            StatColumnType::UltimateDamage => &ULTIMATE_DAMAGE_SPLIT,
-            _ => panic!("Invalid stat column type for Jingliu: {:?}", column_type)
         }
     }
 
@@ -230,7 +217,7 @@ impl CharacterKit for Jingliu {
                     }
 
                     let main_dmg = base_main_dmg * damage_multiplier;
-                    
+
                     // let base_adj_dmg = desc.atk_pct_adj * atk;
                     // let adj_dmg = base_adj_dmg * damage_multiplier;
 
@@ -253,7 +240,7 @@ impl CharacterKit for Jingliu {
                 }
 
                 let main_dmg = base_main_dmg * damage_multiplier;
-                
+
                 // let base_adj_dmg = desc.atk_pct_adj * atk;
                 // let adj_dmg = base_adj_dmg * damage_multiplier;
 

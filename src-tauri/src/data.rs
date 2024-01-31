@@ -133,7 +133,7 @@ pub enum EffectPropertyType {
     CriticalDamageBase,
     HealRatioBase,
     StatusProbabilityBase,
-    
+
     PhysicalAddedRatio,
     FireAddedRatio,
     IceAddedRatio,
@@ -142,7 +142,7 @@ pub enum EffectPropertyType {
     QuantumAddedRatio,
     ImaginaryAddedRatio,
     AllDamageTypeAddedRatio,
-    
+
     BreakDamageAddedRatioBase,
     SPRatioBase,
     StatusResistanceBase,
@@ -335,7 +335,7 @@ pub fn use_relic_set(relic_set: RelicSet) -> &'static RelicSetDescriptor {
 pub enum RelicSlot {
     Head         = 1,
     Hands        = 2,
-    Chest        = 3, 
+    Chest        = 3,
     Feet         = 4,
     PlanarSphere = 5,
     LinkRope     = 6,

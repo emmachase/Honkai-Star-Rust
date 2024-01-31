@@ -61,7 +61,7 @@ function App() {
       {
         count: 1,
         level: 95,
-    
+
         resistance: 0.2,
         elemental_weakness: true,
         weakness_broken: false,
@@ -82,12 +82,12 @@ function App() {
         height={"100vh"}
         gap={"size-200"}
       >
-        <View 
+        <View
           gridArea="sidebar"
           padding={"size-100"}
         >
           {/* <ListBox>
-            
+
           </ListBox> */}
           <SideNav default="optimizer">
             <SideNavButton id="optimizer"><Beaker size="S"/> Optimizer</SideNavButton>
@@ -140,7 +140,7 @@ function App() {
           ]}/>
         </View>
       </Grid>
-      
+
 
       {/* <Tabs orientation="vertical">
         <TabList>
@@ -168,7 +168,7 @@ function App() {
           </Item>
         </TabPanels>
       </Tabs> */}
-      
+
     </View>
   );
 }

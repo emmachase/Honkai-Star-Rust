@@ -37,7 +37,7 @@ use self::{
     the_ashblazing_grand_duke::{THE_ASHBLAZING_GRAND_DUKE_2P, THE_ASHBLAZING_GRAND_DUKE_4P},
     thief_of_shooting_meteor::{THIEF_OF_SHOOTING_METEOR_2P, THIEF_OF_SHOOTING_METEOR_4P},
     wastelander_of_banditry_desert::{
-        WastelanderOfBanditryDesertConditional, 
+        WastelanderOfBanditryDesertConditional,
         WASTELANDER_OF_BANDITRY_DESERT_2P,
         WASTELANDER_OF_BANDITRY_DESERT_4P,
     },
@@ -432,7 +432,7 @@ impl RelicSetKit for [Option<&dyn RelicSetKit>] {
 impl RelicSet {
     pub fn get_2p_effect(&self) -> Option<&dyn RelicSetKit> {
         // let x = hunter_of_glacial_forest_2p;
-        
+
         match self {
             RelicSet::PasserbyOfWanderingCloud => Some(&PASSERBY_OF_WANDERING_CLOUD_2P),
             RelicSet::MusketeerOfWildWheat => Some(&MUSKETEER_OF_WILD_WHEAT_2P),
@@ -493,7 +493,7 @@ pub struct ConditionalRelicSetEffects {
 
 impl Default for ConditionalRelicSetEffects {
     fn default() -> Self {
-        Self { 
+        Self {
             hunter_of_glacial_forest_4p: true,
             champion_of_streetwise_boxing_4p_stacks: 5,
             firesmith_of_lava_forging_4p: true,
