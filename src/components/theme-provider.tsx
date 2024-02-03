@@ -10,6 +10,7 @@ type ThemeProviderProps = {
 
 type ThemeProviderState = {
     theme: Theme;
+    evaluatedTheme?: Exclude<Theme, "system">;
     setTheme: (theme: Theme) => void;
 };
 
@@ -47,23 +48,17 @@ export function ThemeProvider({
     );
 
     const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+    const evaluatedTheme = theme === "system" ? (prefersDarkMode ? "dark" : "light") : theme
     useEffect(() => {
         const root = window.document.documentElement;
 
         root.classList.remove("light", "dark");
-
-        if (theme === "system") {
-            const systemTheme = prefersDarkMode ? "dark" : "light";
-
-            root.classList.add(systemTheme);
-            return;
-        }
-
-        root.classList.add(theme);
-    }, [theme, prefersDarkMode]);
+        root.classList.add(evaluatedTheme);
+    }, [evaluatedTheme]);
 
     const value = {
         theme,
+        evaluatedTheme,
         setTheme: (theme: Theme) => {
             localStorage.setItem(storageKey, theme);
             setTheme(theme);

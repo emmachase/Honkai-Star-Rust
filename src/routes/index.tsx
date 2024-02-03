@@ -15,7 +15,7 @@ enum Characters {
 }
 
 function Index() {
-    const [character, setCharacter] = useState<string | undefined>();
+    const [character, setCharacter] = useState<string>(Characters.Jingliu);
 
     const [kit, setKit] = useState<JingliuConfig>({
         enhanced_state: true,
@@ -30,6 +30,7 @@ function Index() {
             <Combobox
                 value={character}
                 onChange={setCharacter}
+                deselectable={false}
                 options={[
                     { value: Characters.Jingliu, label: "Jingliu" },
                     { value: Characters.Xueyi, label: "Xueyi" },
@@ -37,7 +38,7 @@ function Index() {
                 ]}
             />
 
-            <div className="w-[250px] mt-4">
+            <div className="w-[300px] mt-4 border p-4 rounded-md bg-card">
                 <JingliuKit
                     characterState={{
                         level: 80,
