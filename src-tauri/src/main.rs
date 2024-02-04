@@ -4,6 +4,7 @@
 
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
+use std::thread::available_parallelism;
 use std::{thread, sync::Arc};
 
 use characters::{CharacterKit, CharacterConfig, StatColumnType, StatColumnDesc};
@@ -279,7 +280,7 @@ fn calculate_cols(
     params.light_cone_kit.apply_base_combat_passives(&params.enemy_config, &params.light_cone_state, &mut combat_boosts);
     params.character_kit.apply_base_combat_passives(&params.enemy_config, &params.character_state, &mut combat_boosts);
 
-    let thread_count = 16;
+    let thread_count = available_parallelism().unwrap().get();
     let batches = relics.permutation_batches(thread_count);
 
     let top_k = 100; // TODO: Configurable
