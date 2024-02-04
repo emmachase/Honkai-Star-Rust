@@ -99,7 +99,7 @@ fn main() {
     });
 
     let code = scope.to_string();
-    let code = "// GENERATED CODE - DO NOT EDIT MANUALLY\n\n".to_owned() + &code;
+    let code = "// GENERATED CODE - DO NOT EDIT MANUALLY\n#![allow(dead_code)]\n\n".to_owned() + &code;
 
     let mut file = File::create("src/data.gen.rs").unwrap();
     file.write(code.as_bytes()).unwrap();

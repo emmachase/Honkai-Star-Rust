@@ -165,12 +165,6 @@ pub struct PermutationSubset {
     pub stop_at: usize,
 }
 
-impl PermutationSubset {
-    pub fn size(&self) -> usize {
-        return self.stop_at - self.index;
-    }
-}
-
 impl<'a, T> Permutations<'a, T> {
     pub fn size(&self) -> usize {
         return self.items.iter().map(|v| v.len()).product();

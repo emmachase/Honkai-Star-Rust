@@ -56,7 +56,7 @@ struct UltimateDesc {
     atk_pct_main: f64,
     #[serde(deserialize_with = "deserialize_u8")]
     _syzygy_stacks: u8,
-    atk_pct_adj: f64,
+    _atk_pct_adj: f64,
     _unknown: f64,
 }
 
@@ -94,7 +94,7 @@ struct EnhancedSkillDesc {
     atk_pct_main: f64,
     #[serde(deserialize_with = "deserialize_u8")]
     _syzygy_stacks: u8,
-    atk_pct_adj: f64,
+    _atk_pct_adj: f64,
 }
 
 pub struct JingliuDescriptions {

@@ -275,7 +275,7 @@ pub fn calc_damage_multiplier(
 /**
  * Calculates the maximum damage multiplier of a normal attack (EQ: CR=1) (Not DOT)
  */
-pub fn calc_max_damage_multiplier(
+pub fn _calc_max_damage_multiplier(
     character_stats: &CharacterStats,
     enemy_config: &EnemyConfig,
     boosts: &Boosts,
@@ -287,4 +287,3 @@ pub fn calc_max_damage_multiplier(
 
     return common_multiplier * crit_multiplier;
 }
-

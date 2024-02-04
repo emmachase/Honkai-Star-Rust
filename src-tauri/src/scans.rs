@@ -1,4 +1,4 @@
-use serde::{de, Deserialize, Serialize};
+use serde::{de, Deserialize};
 use lazy_static::lazy_static;
 use specta::Type;
 

@@ -1,4 +1,5 @@
 // GENERATED CODE - DO NOT EDIT MANUALLY
+#![allow(dead_code)]
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
