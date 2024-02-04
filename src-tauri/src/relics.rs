@@ -1,6 +1,9 @@
 pub mod cavern;
 pub mod ornament;
 
+use serde::{Deserialize, Serialize};
+use specta::Type;
+
 use crate::{data_mappings::RelicSet, data::{EffectPropertyType, RelicSlot, Element}, damage::{Level, Boosts, EnemyConfig, CharacterStats}, characters::{apply_effect_boost, StatColumnType}};
 
 use self::{
@@ -45,7 +48,7 @@ use self::{
 
 pub type RelicStat = (EffectPropertyType, f64);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
 pub struct Relic {
     pub set: RelicSet,
     pub slot: RelicSlot,

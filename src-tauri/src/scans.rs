@@ -1,5 +1,6 @@
-use serde::{Deserialize, de};
+use serde::{de, Deserialize, Serialize};
 use lazy_static::lazy_static;
+use specta::Type;
 
 use crate::{data_mappings::{RelicSet, Character}, data::{RelicSlot, EffectPropertyType, use_relic_main_affixes}, relics::{Relic, RelicStat}};
 
@@ -84,13 +85,13 @@ fn from_stat_name(s: &str, slot: RelicSlot, is_main: bool) -> Option<EffectPrope
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 pub struct KelZSubstat {
     pub key: String,
     pub value: f64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 pub struct KelZRelic {
     #[serde(deserialize_with = "deserialize_kelz_set")]
     pub set: RelicSet,

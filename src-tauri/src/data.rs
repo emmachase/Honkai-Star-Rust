@@ -61,7 +61,7 @@ pub struct Promotions<Spec> {
     pub values: Vec<Spec>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Type)]
 pub enum Element {
     Physical,
     Fire,
@@ -331,7 +331,7 @@ pub fn use_relic_set(relic_set: RelicSet) -> &'static RelicSetDescriptor {
     return &RELIC_SETS[relic_set.to_id()];
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Type)]
 pub enum RelicSlot {
     Head         = 1,
     Hands        = 2,

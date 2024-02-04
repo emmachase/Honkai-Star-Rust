@@ -4,6 +4,7 @@ import * as RadixDialog from '@radix-ui/react-dialog'
 import * as React from 'react'
 import { Primitive } from '@radix-ui/react-primitive'
 import { commandScore } from '../util/command-score'
+import { ScrollArea } from './scroll-area'
 
 type Children = { children?: React.ReactNode }
 type DivProps = React.ComponentPropsWithoutRef<typeof Primitive.div>
@@ -850,11 +851,13 @@ const List = React.forwardRef<HTMLDivElement, ListProps>((props, forwardedRef) =
       aria-label={label}
       id={context.listId}
     >
+        <ScrollArea viewportClassName="max-h-[300px]">
       {SlottableWithNestedChildren(props, (child) => (
         <div ref={mergeRefs([height, context.listInnerRef])} cmdk-list-sizer="">
           {child}
         </div>
       ))}
+      </ScrollArea>
     </Primitive.div>
   )
 })

@@ -17,14 +17,17 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/utils";
+import { useRef } from "react";
 
 export function Combobox<V extends string>(
     props: {
+        label?: string;
         options: {
             value: V;
             label: string;
         }[];
         placeholder?: string;
+        className?: string;
     } & (
         | {
               deselectable?: true;
@@ -46,9 +49,11 @@ export function Combobox<V extends string>(
     const [open, setOpen] = React.useState(false);
     const multiple = "multiple" in props;
 
+    let isPlaceholder = true;
     let content = props.placeholder ?? "Select an option...";
     if (multiple) {
         if (props.value.length > 0) {
+            isPlaceholder = false;
             content = props.value
                 .map((value) =>
                     props.options.find((option) => option.value === value)?.label,
@@ -61,26 +66,37 @@ export function Combobox<V extends string>(
                 (option) => option.value === props.value,
             );
 
+            isPlaceholder = false;
             content = option?.label ?? "Your code is broken";
         }
     }
 
-    return (
-        <Popover open={open} onOpenChange={setOpen}>
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const [triggerWidth, setTriggerWidth] = React.useState(250);
+
+    return (<>
+        <div className="text-sm">{props.label}</div>
+        <Popover open={open} onOpenChange={(o) => {
+            if (o) {
+                setTriggerWidth(triggerRef.current?.offsetWidth ?? 250);
+            }
+            setOpen(o);
+        }}>
             <PopoverTrigger asChild>
                 <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-[250px] justify-between"
+                    className={cn("w-[250px] justify-between", props.className)}
+                    ref={triggerRef}
                 >
-                    <span className="overflow-ellipsis overflow-hidden">
+                    <span className={cn("overflow-ellipsis overflow-hidden", isPlaceholder && "text-muted-foreground")}>
                         {content}
                     </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[250px] p-0">
+            <PopoverContent className="p-0" style={{ width: triggerWidth }}>
                 <Command>
                     <CommandInput placeholder="Search" />
                     <CommandEmpty>No results found.</CommandEmpty>
@@ -136,5 +152,5 @@ export function Combobox<V extends string>(
                 </Command>
             </PopoverContent>
         </Popover>
-    );
+    </>);
 }

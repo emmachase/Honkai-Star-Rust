@@ -10,7 +10,7 @@ pub type Ascension = u8;
 pub type Eidolon = u8;
 pub type Superimposition = u8;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Type)]
 pub struct CharacterStats {
     pub level: Level,
     pub ascension: Ascension,
@@ -27,6 +27,9 @@ pub struct CharacterStats {
     pub energy_recharge: f64,
     pub outgoing_healing_boost: f64,
     pub elemental_dmg_bonus: f64,
+
+    // Boost-only, included for convenience
+    pub effect_hit_rate: f64,
 }
 
 impl CharacterStats {
@@ -72,6 +75,10 @@ impl CharacterStats {
 
     pub fn elemental_dmg_bonus(&self, boosts: &Boosts) -> f64 {
         return self.elemental_dmg_bonus + boosts.elemental_dmg_boost;
+    }
+
+    pub fn effect_hit_rate(&self, boosts: &Boosts) -> f64 {
+        return self.effect_hit_rate + boosts.effect_hit_rate;
     }
 }
 
@@ -175,6 +182,8 @@ impl Add<Boosts> for CharacterStats {
             energy_recharge: self.energy_recharge(&rhs),
             outgoing_healing_boost: self.outgoing_healing_boost(&rhs),
             elemental_dmg_bonus: self.elemental_dmg_bonus(&rhs) + rhs.all_type_dmg_boost, // TODO: Should we include all_type_dmg_boost here?
+
+            effect_hit_rate: self.effect_hit_rate(&rhs),
         }
     }
 }

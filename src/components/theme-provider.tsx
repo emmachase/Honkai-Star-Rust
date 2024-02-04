@@ -1,3 +1,4 @@
+import { useSettings } from "@/store";
 import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
@@ -39,13 +40,9 @@ function useMediaQuery(query: string) {
 
 export function ThemeProvider({
     children,
-    defaultTheme = "system",
-    storageKey = "vite-ui-theme",
     ...props
 }: ThemeProviderProps) {
-    const [theme, setTheme] = useState<Theme>(
-        () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-    );
+    const [ theme, setTheme ] = useSettings(s => [s.theme, s.setTheme])
 
     const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
     const evaluatedTheme = theme === "system" ? (prefersDarkMode ? "dark" : "light") : theme
@@ -56,23 +53,18 @@ export function ThemeProvider({
         root.classList.add(evaluatedTheme);
     }, [evaluatedTheme]);
 
-    const value = {
-        theme,
-        evaluatedTheme,
-        setTheme: (theme: Theme) => {
-            localStorage.setItem(storageKey, theme);
-            setTheme(theme);
-        },
-    };
-
     return (
-        <ThemeProviderContext.Provider {...props} value={value}>
-            {children}
+        <ThemeProviderContext.Provider {...props} value={{
+            theme,
+            evaluatedTheme,
+            setTheme,
+        }}>
+            { children }
         </ThemeProviderContext.Provider>
     );
 }
 
-export const useTheme = () => {
+export const useTheme: () => ThemeProviderState = () => {
     const context = useContext(ThemeProviderContext);
 
     if (context === undefined)

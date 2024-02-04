@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { ThemeButton } from "@/components/ui/theme-button";
 import { Column, Row } from "@/components/util/flex";
 import { AnyRoute, createRootRoute, Link, LinkProps, Outlet, RegisteredRouter, RoutePaths, ToOptions, useMatch, useMatches, useMatchRoute } from "@tanstack/react-router";
@@ -31,6 +32,8 @@ function Nav() {
                 <NavLink to="/">Optimizer</NavLink>
                 <NavLink to="/characters">Characters</NavLink>
                 <NavLink to="/relics">Relics</NavLink>
+                <Separator />
+                <NavLink to="/import">Import</NavLink>
             </Column>
             <Row className="p-2 justify-between">
                 <ThemeButton />
@@ -45,7 +48,7 @@ function Nav() {
 
 function Root() {
     return (<>
-        <div className="grid p-2 grid-cols-[160px_1fr] h-dvh">
+        <div className="grid p-2 grid-cols-[160px_1fr] h-dvh gap-2">
             <Nav />
             <Outlet />
         </div>

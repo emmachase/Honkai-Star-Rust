@@ -76,6 +76,8 @@ pub fn calculate_character_base_stats(character: (Character, CharacterState), li
         energy_recharge: 0.0,
         outgoing_healing_boost: 0.0,
         elemental_dmg_bonus: 0.0,
+
+        effect_hit_rate: 0.0,
     };
 
     if let Some(light_cone) = light_cone {

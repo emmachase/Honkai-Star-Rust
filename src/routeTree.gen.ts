@@ -4,6 +4,7 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as RelicsImport } from './routes/relics'
+import { Route as ImportImport } from './routes/import'
 import { Route as CharactersImport } from './routes/characters'
 import { Route as SplatImport } from './routes/$'
 import { Route as IndexImport } from './routes/index'
@@ -12,6 +13,11 @@ import { Route as IndexImport } from './routes/index'
 
 const RelicsRoute = RelicsImport.update({
   path: '/relics',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ImportRoute = ImportImport.update({
+  path: '/import',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -46,6 +52,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CharactersImport
       parentRoute: typeof rootRoute
     }
+    '/import': {
+      preLoaderRoute: typeof ImportImport
+      parentRoute: typeof rootRoute
+    }
     '/relics': {
       preLoaderRoute: typeof RelicsImport
       parentRoute: typeof rootRoute
@@ -59,5 +69,6 @@ export const routeTree = rootRoute.addChildren([
   IndexRoute,
   SplatRoute,
   CharactersRoute,
+  ImportRoute,
   RelicsRoute,
 ])
