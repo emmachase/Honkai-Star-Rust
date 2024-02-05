@@ -2,9 +2,11 @@ import { EffectPropertyType, JingliuConfig, Relic, RelicSlot, ResolvedCalculator
 import { OptimizerTable } from "@/components/domain/optimizer-table";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Column, Row } from "@/components/util/flex";
 import { JingliuKit } from "@/kits/characters/jingliu";
-import { useData } from "@/store";
+import { useCalcs, useData } from "@/store";
 import { cn } from "@/utils";
 import { createFileRoute } from "@tanstack/react-router";
 import { PropsWithChildren, useEffect, useMemo, useState } from "react";
@@ -74,6 +76,8 @@ function PermutationCard({ allRelics, filteredRelics, triggerSearch }: {
         return [filteredCounts, totalCounts];
     }, [filteredRelics, allRelics]);
 
+    const running = useCalcs(c => c.running);
+
     return (
         <Card className="w-[300px]">
             <Column>
@@ -89,7 +93,7 @@ function PermutationCard({ allRelics, filteredRelics, triggerSearch }: {
                     <Row className="items-center gap-2">Perms <Dash /> {permutations(filteredCounts).toLocaleString()}</Row>
                 </div>
 
-                <Button size="sm" onClick={triggerSearch}>Search</Button>
+                <Button size="sm" onClick={triggerSearch}>{running ? "Cancel Search" : "Search"}</Button>
             </Column>
         </Card>
     )
@@ -223,13 +227,13 @@ function MainStatFilterCard(props: {
 
 const characterState = {
     level: 80,
-    eidolon: 6,
+    eidolon: 0,
     ascension: 6,
     skills: {
-        basic: 7 - 1,
-        skill: 12 - 1,
-        ult: 12 - 1,
-        talent: 12 - 1,
+        basic: 5 - 1,
+        skill: 10 - 1,
+        ult: 10 - 1,
+        talent: 10 - 1,
     },
     traces: {
         ability_1: true,
@@ -265,36 +269,43 @@ function Index() {
         return allRelics.filter(r => filters.every(f => f(r)));
     }, [allRelics, filters]);
 
-    const [result, setResult] = useState<SortResultsSerde>();
+    const [result, setResult] = useCalcs(c => [c.sortResults, c.setSortResults]); // useState<SortResultsSerde>();
+    const [running, setRunning] = useCalcs(c => [c.running, c.setRunning]); // TODO
     const triggerSearch = async () => {
-        setResult(await commands.prankHimJohn(
-            filteredRelics,
-            { Jingliu: kit },
-            characterState,
-            {
-                IShallBeMyOwnSword: {
-                    eclipse_stacks: 3,
-                    max_stack_def_pen: true,
+        if (running) {
+            await commands.stopPranking();
+        } else {
+            setRunning(true);
+            setResult(await commands.prankHimJohn(
+                filteredRelics,
+                { Jingliu: kit },
+                characterState,
+                {
+                    IShallBeMyOwnSword: {
+                        eclipse_stacks: 3,
+                        max_stack_def_pen: true,
+                    },
                 },
-            },
-            {
-                ascension: 6,
-                level: 80,
-                superimposition: 5 - 1,
-            },
-            {
-                count: 1,
-                level: 95,
+                {
+                    ascension: 6,
+                    level: 80,
+                    superimposition: 1 - 1,
+                },
+                {
+                    count: 1,
+                    level: 95,
 
-                resistance: 0.2,
-                elemental_weakness: true,
-                weakness_broken: false,
-            },
-        ));
+                    resistance: 0.2,
+                    elemental_weakness: true,
+                    weakness_broken: false,
+                },
+            ));
+            setRunning(false);
+        }
     };
 
     return (
-        <div>
+        <Column className="min-w-0">
             <h3>Welcome Home!</h3>
             <Combobox
                 value={character}
@@ -307,7 +318,7 @@ function Index() {
                 ]}
             />
 
-            <div className="flex flex-wrap">
+            <Row className="flex-wrap gap-2">
                 <Card className="w-[300px]">
                     <JingliuKit
                         characterState={characterState}
@@ -326,12 +337,20 @@ function Index() {
                 />
 
                 <MainStatFilterCard onChange={fs => setFilters(fs)}/>
-            </div>
+            </Row>
 
-            {/* {result} */}
-            <OptimizerTable
-                data={result}
-            />
-        </div>
+            {/* {JSON.stringify(result)} */}
+
+            <div className="w-full relative">
+                <ScrollArea
+                    className="w-full"
+                    scrollbar={<ScrollBar orientation="horizontal" />}
+                >
+                    <OptimizerTable className="w-full"
+                        data={result}
+                    />
+                </ScrollArea>
+            </div>
+        </Column>
     );
 }

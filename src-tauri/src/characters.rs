@@ -125,10 +125,10 @@ impl StatColumnType {
             StatColumnType::SkillDamage => "Skill DMG",
             StatColumnType::SkillHeal => "Skill Heal",
             StatColumnType::SkillShield => "Skill Shield",
-            StatColumnType::UltimateDamage => "Ultimate DMG",
-            StatColumnType::UltimateHeal => "Ultimate Heal",
-            StatColumnType::UltimateShield => "Ultimate Shield",
-            StatColumnType::FollowUpDamage => "Follow-Up DMG",
+            StatColumnType::UltimateDamage => "Ult DMG",
+            StatColumnType::UltimateHeal => "Ult Heal",
+            StatColumnType::UltimateShield => "Ult Shield",
+            StatColumnType::FollowUpDamage => "FUA DMG",
         }
     }
 }

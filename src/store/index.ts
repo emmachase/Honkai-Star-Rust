@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 // import { withLenses, lens, mergeDeep } from "@dhmk/zustand-lens";
-import { Relic } from "@/bindings.gen";
+import { Relic, SortResultsSerde } from "@/bindings.gen";
 
 type Theme = "light" | "dark" | "system"
 export const useSettings = create<{
@@ -19,6 +19,20 @@ export const useData = create<{
     relics: [],
     setRelics: (relics) => set({ relics }),
 }), { name: "data" }))
+
+export const useCalcs = create<{
+    sortResults: SortResultsSerde | undefined
+    setSortResults: (sortResults: SortResultsSerde) => void
+
+    running: boolean
+    setRunning: (running: boolean) => void
+}>()((set) => ({
+    sortResults: undefined,
+    setSortResults: (sortResults) => set({ sortResults }),
+
+    running: false,
+    setRunning: (running) => set({ running }),
+}))
 
 // export const useStore = create<{
 //     settings: typeof settingsSlice

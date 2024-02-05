@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ThemeButton } from "@/components/ui/theme-button";
 import { Column, Row } from "@/components/util/flex";
@@ -48,9 +49,11 @@ function Nav() {
 
 function Root() {
     return (<>
-        <div className="grid p-2 grid-cols-[160px_1fr] h-dvh gap-2">
+        <div className="relative grid p-2 grid-cols-[160px_auto] w-dvw h-dvh gap-2 overflow-auto">
             <Nav />
-            <Outlet />
+            <ScrollArea className="w-full min-w-0" viewportClassName="w-full min-w-0">
+                <Outlet />
+            </ScrollArea>
         </div>
         {/* <TanStackRouterDevtools /> */}
     </>);

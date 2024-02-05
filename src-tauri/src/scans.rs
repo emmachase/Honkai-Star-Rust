@@ -1,6 +1,7 @@
 use serde::{de, Deserialize};
 use lazy_static::lazy_static;
 use specta::Type;
+use uuid::Uuid;
 
 use crate::{data_mappings::{RelicSet, Character}, data::{RelicSlot, EffectPropertyType, use_relic_main_affixes}, relics::{Relic, RelicStat}};
 
@@ -119,6 +120,8 @@ impl KelZRelic {
         }
 
         return Some(Relic {
+            id: Uuid::new_v4().to_string(),
+
             set: self.set,
             slot: self.slot,
             level: self.level,

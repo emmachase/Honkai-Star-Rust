@@ -75,7 +75,7 @@ export function Combobox<V extends string>(
     const [triggerWidth, setTriggerWidth] = React.useState(250);
 
     return (<>
-        <div className="text-sm">{props.label}</div>
+        {props.label && <div className="text-sm">{props.label}</div>}
         <Popover open={open} onOpenChange={(o) => {
             if (o) {
                 setTriggerWidth(triggerRef.current?.offsetWidth ?? 250);

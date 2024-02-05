@@ -50,6 +50,8 @@ pub type RelicStat = (EffectPropertyType, f64);
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
 pub struct Relic {
+    pub id: String,
+
     pub set: RelicSet,
     pub slot: RelicSlot,
     pub level: Level,

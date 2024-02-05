@@ -4,7 +4,10 @@
 async prankHimJohn(relics: Relic[], characterCfg: CharacterConfig, characterState: CharacterState, lightConeCfg: LightConeConfig, lightConeState: LightConeState, enemyConfig: EnemyConfig) : Promise<SortResultsSerde> {
 return await TAURI_INVOKE("plugin:tauri-specta|prank_him_john", { relics, characterCfg, characterState, lightConeCfg, lightConeState, enemyConfig });
 },
-async parseKelz(scan: string) : Promise<__Result__<{ set: RelicSet; slot: RelicSlot; level: number; main_stat: [EffectPropertyType, number]; sub_stats: ([EffectPropertyType, number])[] }[], string>> {
+async stopPranking() : Promise<null> {
+return await TAURI_INVOKE("plugin:tauri-specta|stop_pranking");
+},
+async parseKelz(scan: string) : Promise<__Result__<{ id: string; set: RelicSet; slot: RelicSlot; level: number; main_stat: [EffectPropertyType, number]; sub_stats: ([EffectPropertyType, number])[] }[], string>> {
 try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:tauri-specta|parse_kelz", { scan }) };
 } catch (e) {
@@ -30,11 +33,12 @@ export type IShallBeMyOwnSwordConfig = { eclipse_stacks: number; max_stack_def_p
 export type JingliuConfig = { enhanced_state: boolean; hp_drain_pct: number; e1_crit_dmg: boolean; e2_skill_buff: boolean }
 export type LightConeConfig = { IShallBeMyOwnSword: IShallBeMyOwnSwordConfig }
 export type LightConeState = { level: number; ascension: number; superimposition: number }
-export type Relic = { set: RelicSet; slot: RelicSlot; level: number; main_stat: [EffectPropertyType, number]; sub_stats: ([EffectPropertyType, number])[] }
+export type Relic = { id: string; set: RelicSet; slot: RelicSlot; level: number; main_stat: [EffectPropertyType, number]; sub_stats: ([EffectPropertyType, number])[] }
 export type RelicSet = "PasserbyOfWanderingCloud" | "MusketeerOfWildWheat" | "KnightOfPurityPalace" | "HunterOfGlacialForest" | "ChampionOfStreetwiseBoxing" | "GuardOfWutheringSnow" | "FiresmithOfLavaForging" | "GeniusOfBrilliantStars" | "BandOfSizzlingThunder" | "EagleOfTwilightLine" | "ThiefOfShootingMeteor" | "WastelanderOfBanditryDesert" | "LongevousDisciple" | "MessengerTraversingHackerspace" | "TheAshblazingGrandDuke" | "PrisonerInDeepConfinement" | "SpaceSealingStation" | "FleetOfTheAgeless" | "PanCosmicCommercialEnterprise" | "BelobogOfTheArchitects" | "CelestialDifferentiator" | "InertSalsotto" | "TaliaKingdomOfBanditry" | "SprightlyVonwacq" | "RutilantArena" | "BrokenKeel" | "FirmamentFrontlineGlamoth" | "PenaconyLandOfTheDreams"
 export type RelicSlot = "Head" | "Hands" | "Chest" | "Feet" | "PlanarSphere" | "LinkRope"
-export type ResolvedCalculatorResult = { relic_perm: Relic[]; cols: ([string, number])[]; calculated_stats: [CharacterStats, CharacterStats] }
-export type SortResultsSerde = { hp: ResolvedCalculatorResult[]; atk: ResolvedCalculatorResult[]; def: ResolvedCalculatorResult[]; spd: ResolvedCalculatorResult[]; effect_res: ResolvedCalculatorResult[]; crit_rate: ResolvedCalculatorResult[]; crit_dmg: ResolvedCalculatorResult[]; break_effect: ResolvedCalculatorResult[]; energy_recharge: ResolvedCalculatorResult[]; outgoing_healing_boost: ResolvedCalculatorResult[]; elemental_dmg_bonus: ResolvedCalculatorResult[]; effect_hit_rate: ResolvedCalculatorResult[]; cols: ([string, ResolvedCalculatorResult[]])[] }
+export type ResolvedCalculatorResult = { relic_perm: string[]; cols: ([string, number])[]; calculated_stats: [CharacterStats, CharacterStats] }
+export type SortResultsSerde = { base: SortResultsSerdeBase; combat: SortResultsSerdeBase; cols: ([string, ResolvedCalculatorResult[]])[] }
+export type SortResultsSerdeBase = { hp: ResolvedCalculatorResult[]; atk: ResolvedCalculatorResult[]; def: ResolvedCalculatorResult[]; spd: ResolvedCalculatorResult[]; effect_res: ResolvedCalculatorResult[]; crit_rate: ResolvedCalculatorResult[]; crit_dmg: ResolvedCalculatorResult[]; break_effect: ResolvedCalculatorResult[]; energy_recharge: ResolvedCalculatorResult[]; outgoing_healing_boost: ResolvedCalculatorResult[]; elemental_dmg_bonus: ResolvedCalculatorResult[]; effect_hit_rate: ResolvedCalculatorResult[] }
 
 /** tauri-specta globals **/
 
