@@ -8,10 +8,11 @@ use std::sync::RwLock;
 use std::thread::available_parallelism;
 use std::{thread, sync::Arc};
 
-use characters::{CharacterKit, CharacterConfig, StatColumnType, StatColumnDesc};
+use characters::jingliu::JingliuDescriptions;
+use characters::{CharacterConfig, CharacterDescriptions, CharacterKit, StatColumnDesc, StatColumnType};
 use damage::CharacterStats;
 use data::{CharacterDescriptor, RelicSlot, EffectPropertyType};
-use data_mappings::RelicSet;
+use data_mappings::{Character, RelicSet};
 use lightcones::LightConeConfig;
 use relics::{Relic, RelicSetKit, ConditionalRelicSetEffects, RelicSetKitParams};
 use scans::KelZScan;
@@ -519,6 +520,14 @@ fn calculate_cols(
     return combined_results
 }
 
+#[tauri::command(async)]
+#[specta::specta]
+fn get_description(
+    character: Character
+) -> CharacterDescriptions {
+    CharacterDescriptions::get(character)
+}
+
 pub struct Flags {
     pub running: Arc<RwLock<bool>>
 }
@@ -526,7 +535,7 @@ pub struct Flags {
 fn main() {
     let specta_builder = {
         let specta_builder = tauri_specta::ts::builder()
-            .commands(tauri_specta::collect_commands![prank_him_john, stop_pranking, parse_kelz]);
+            .commands(tauri_specta::collect_commands![prank_him_john, stop_pranking, parse_kelz, get_description]);
 
         #[cfg(debug_assertions)]
         let specta_builder = specta_builder.path("../src/bindings.gen.ts");
@@ -537,7 +546,7 @@ fn main() {
     tauri::Builder::default()
         .manage(Flags { running: Arc::new(RwLock::new(false)) })
         .plugin(specta_builder)
-        .invoke_handler(tauri::generate_handler![prank_him_john, stop_pranking, parse_kelz])
+        .invoke_handler(tauri::generate_handler![prank_him_john, stop_pranking, parse_kelz, get_description])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

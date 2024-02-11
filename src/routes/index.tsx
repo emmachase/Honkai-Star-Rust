@@ -1,4 +1,4 @@
-import { EffectPropertyType, JingliuConfig, Relic, RelicSlot, ResolvedCalculatorResult, SortResultsSerde, commands } from "@/bindings.gen";
+import { EffectPropertyType, IShallBeMyOwnSwordConfig, JingliuConfig, Relic, RelicSlot, ResolvedCalculatorResult, SortResultsSerde, commands } from "@/bindings.gen";
 import { OptimizerTable } from "@/components/domain/optimizer-table";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
@@ -6,10 +6,11 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Column, Row } from "@/components/util/flex";
 import { JingliuKit } from "@/kits/characters/jingliu";
+import { IShallBeMyOwnSwordKit } from "@/kits/lightcones/i-shall-be-my-own-sword";
 import { useCalcs, useData } from "@/store";
 import { cn } from "@/utils";
 import { createFileRoute } from "@tanstack/react-router";
-import { PropsWithChildren, useEffect, useMemo, useState } from "react";
+import { PropsWithChildren, Suspense, useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/")({
     component: Index,
@@ -23,7 +24,7 @@ enum Characters {
 
 function Card({ children, className, ...props }: PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>) {
     return (
-        <div className={cn("border p-4 rounded-md bg-card", className)} {...props}>
+        <div className={cn("border p-4 rounded-md bg-card w-[300px]", className)} {...props}>
             {children}
         </div>
     );
@@ -79,7 +80,7 @@ function PermutationCard({ allRelics, filteredRelics, triggerSearch }: {
     const running = useCalcs(c => c.running);
 
     return (
-        <Card className="w-[300px]">
+        <Card>
             <Column>
                 <div>
                     <Row className="items-center gap-2">Head <CountString filtered={filteredCounts.head} total={totalCounts.head} /></Row>
@@ -161,7 +162,7 @@ function MainStatFilterCard(props: {
     }, [chestFilter, feetFilter, sphereFilter, linkRopeFilter])
 
     return (
-        <Card className="w-[300px]">
+        <Card>
             <Column className="gap-1">
                 <Combobox<EffectPropertyType> multiple className="w-full"
                     placeholder="Chest Main Stat"
@@ -252,6 +253,12 @@ const characterState = {
     },
 }
 
+const lcState = {
+    ascension: 6,
+    level: 80,
+    superimposition: 1 - 1,
+}
+
 function Index() {
     const [character, setCharacter] = useState<string>(Characters.Jingliu);
 
@@ -260,6 +267,11 @@ function Index() {
         e1_crit_dmg: true,
         e2_skill_buff: true,
         hp_drain_pct: 1.0,
+    });
+
+    const [lcKit, setLcKit] = useState<IShallBeMyOwnSwordConfig>({
+        eclipse_stacks: 3,
+        max_stack_def_pen: true,
     });
 
     const [filters, setFilters] = useState<((r: Relic) => boolean)[]>([])
@@ -280,17 +292,8 @@ function Index() {
                 filteredRelics,
                 { Jingliu: kit },
                 characterState,
-                {
-                    IShallBeMyOwnSword: {
-                        eclipse_stacks: 3,
-                        max_stack_def_pen: true,
-                    },
-                },
-                {
-                    ascension: 6,
-                    level: 80,
-                    superimposition: 1 - 1,
-                },
+                { IShallBeMyOwnSword: lcKit },
+                lcState,
                 {
                     count: 1,
                     level: 95,
@@ -318,16 +321,25 @@ function Index() {
                 ]}
             />
 
-            <Row className="flex-wrap gap-2">
-                <Card className="w-[300px]">
-                    <JingliuKit
-                        characterState={characterState}
-                        value={kit}
-                        onChange={(value) => {
-                            console.log(value);
-                            setKit(value);
-                        }}
-                    />
+            <Row className="flex-wrap gap-2 justify-center">
+                <Card>
+                    <Suspense fallback="Loading...">
+                        <JingliuKit
+                            characterState={characterState}
+                            value={kit}
+                            onChange={setKit}
+                        />
+                    </Suspense>
+                </Card>
+
+                <Card>
+                    <Suspense fallback="Loading...">
+                        <IShallBeMyOwnSwordKit
+                            lightConeState={lcState}
+                            value={lcKit}
+                            onChange={setLcKit}
+                        />
+                    </Suspense>
                 </Card>
 
                 <PermutationCard

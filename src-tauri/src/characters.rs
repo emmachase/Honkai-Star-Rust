@@ -184,6 +184,11 @@ pub enum CharacterConfig {
     Jingliu(jingliu::JingliuConfig),
 }
 
+#[derive(Debug, Type, Serialize)]
+pub enum CharacterDescriptions {
+    Jingliu(jingliu::JingliuDescriptions)
+}
+
 impl CharacterConfig {
     pub fn get_character_id(&self) -> Character {
         match self {
@@ -194,6 +199,15 @@ impl CharacterConfig {
     pub fn get_kit(&self) -> Box<dyn CharacterKit+Send+Sync> {
         match self {
             CharacterConfig::Jingliu(config) => Box::new(jingliu::Jingliu::new(*config)),
+        }
+    }
+}
+
+impl CharacterDescriptions {
+    pub fn get(character: Character) -> Self {
+        match character {
+            Character::Jingliu => CharacterDescriptions::Jingliu(jingliu::JingliuDescriptions::get()),
+            _ => panic!("Character {:?} does not have descriptions", character),
         }
     }
 }

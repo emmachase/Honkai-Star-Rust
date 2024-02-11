@@ -14,6 +14,9 @@ try {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getDescription(character: Character) : Promise<CharacterDescriptions> {
+return await TAURI_INVOKE("plugin:tauri-specta|get_description", { character });
 }
 }
 
@@ -21,7 +24,9 @@ try {
 
 /** user-defined types **/
 
+export type Character = "March7th" | "DanHeng" | "Himeko" | "Welt" | "Kafka" | "SilverWolf" | "Arlan" | "Asta" | "Herta" | "Bronya" | "Seele" | "Serval" | "Gepard" | "Natasha" | "Pela" | "Clara" | "Sampo" | "Hook" | "Lynx" | "Luka" | "TopazAndNumby" | "Qingque" | "Tingyun" | "Luocha" | "JingYuan" | "Blade" | "Sushang" | "Yukong" | "FuXuan" | "Yanqing" | "Guinaifen" | "Bailu" | "Jingliu" | "DanHengImbibitorLunae" | "Xueyi" | "Hanya" | "Huohuo" | "Argenti" | "RuanMei" | "DrRatio" | "PhysicalTrailblazerM" | "PhysicalTrailblazerF" | "FireTrailblazerM" | "FireTrailblazerF"
 export type CharacterConfig = { Jingliu: JingliuConfig }
+export type CharacterDescriptions = { Jingliu: JingliuDescriptions }
 export type CharacterSkillState = { basic: number; skill: number; ult: number; talent: number }
 export type CharacterState = { level: number; ascension: number; eidolon: number; skills: CharacterSkillState; traces: CharacterTraceState }
 export type CharacterStats = { level: number; ascension: number; element: Element; hp: number; atk: number; def: number; spd: number; effect_res: number; crit_rate: number; crit_dmg: number; break_effect: number; energy_recharge: number; outgoing_healing_boost: number; elemental_dmg_bonus: number; effect_hit_rate: number }
@@ -30,7 +35,50 @@ export type EffectPropertyType = "HPDelta" | "AttackDelta" | "DefenceDelta" | "S
 export type Element = "Physical" | "Fire" | "Ice" | "Thunder" | "Wind" | "Quantum" | "Imaginary"
 export type EnemyConfig = { count: number; level: number; resistance: number; elemental_weakness: boolean; weakness_broken: boolean }
 export type IShallBeMyOwnSwordConfig = { eclipse_stacks: number; max_stack_def_pen: boolean }
+/**
+ * 
+ * * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy.
+ * 
+ */
+export type JingliuBasicDesc = { atk_pct: number }
 export type JingliuConfig = { enhanced_state: boolean; hp_drain_pct: number; e1_crit_dmg: boolean; e2_skill_buff: boolean }
+export type JingliuDescriptions = { basic: JingliuBasicDesc[]; normal_skill: JingliuNormalSkillDesc[]; ultimate: JingliuUltimateDesc[]; talent: JingliuTalentDesc[]; enhanced_skill: JingliuEnhancedSkillDesc[] }
+/**
+ * 
+ * * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy, and deals Ice DMG equal
+ * * to #3[i]% of Jingliu's ATK to adjacent enemies. Consumes #2[i] stack(s) of Syzygy. Using
+ * * this ability does not consume Skill Points.
+ * 
+ */
+export type JingliuEnhancedSkillDesc = { atk_pct_main: number; _syzygy_stacks: number; _atk_pct_adj: number }
+/**
+ * 
+ * * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy and obtains #2[i] stack(s) of Syzygy.
+ * 
+ */
+export type JingliuNormalSkillDesc = { atk_pct: number; _syzygy_stacks: number }
+/**
+ * 
+ * * When Jingliu has #5[i] stack(s) of Syzygy, she enters the Spectral Transmigration state with her
+ * * Action Advanced by #6[i]% and her CRIT Rate increases by #7[i]%. Then, Jingliu's Skill
+ * * \"Transcendent Flash\" is enhanced to \"Moon On Glacial River,\" and only this enhanced Skill is
+ * * available for use in battle. When Jingliu uses an attack in the Spectral Transmigration state,
+ * * she consumes HP from all other allies equal to #2[i]% of their respective Max HP (this cannot
+ * * reduce allies' HP to lower than 1). Jingliu's ATK increases by #3[i]% of the total HP consumed
+ * * from all allies in this attack, capped at #4[i]% of her base ATK, lasting until the current attack
+ * * ends. Jingliu cannot enter the Spectral Transmigration state again until the current
+ * * Spectral Transmigration state ends. Syzygy can stack up to 3 times. When Syzygy stacks become 0,
+ * * Jingliu will exit the Spectral Transmigration state.
+ * 
+ */
+export type JingliuTalentDesc = { _unknown: number; _consume_hp_pct: number; _atk_pct_from_hp: number; atk_pct_cap: number; _required_stacks: number; _action_advance_pct: number; crit_rate_pct: number }
+/**
+ * 
+ * * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy, and deals Ice DMG equal to #3[i]%
+ * * of Jingliu's ATK to any adjacent enemies. Gains #2[i] stack(s) of Syzygy after attack ends.
+ * 
+ */
+export type JingliuUltimateDesc = { atk_pct_main: number; _syzygy_stacks: number; _atk_pct_adj: number; _unknown: number }
 export type LightConeConfig = { IShallBeMyOwnSword: IShallBeMyOwnSwordConfig }
 export type LightConeState = { level: number; ascension: number; superimposition: number }
 export type Relic = { id: string; set: RelicSet; slot: RelicSlot; level: number; main_stat: [EffectPropertyType, number]; sub_stats: ([EffectPropertyType, number])[] }

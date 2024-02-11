@@ -32,16 +32,16 @@ impl Jingliu {
 /**
  * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy.
  */
-#[derive(Debug, Clone, Copy, Deserialize_tuple)]
-struct BasicDesc {
+#[derive(Debug, Clone, Copy, Deserialize_tuple, Serialize, Type)]
+struct JingliuBasicDesc {
     atk_pct: f64,
 }
 
 /**
  * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy and obtains #2[i] stack(s) of Syzygy.
  */
-#[derive(Debug, Clone, Copy, Deserialize_tuple)]
-struct NormalSkillDesc {
+#[derive(Debug, Clone, Copy, Deserialize_tuple, Serialize, Type)]
+struct JingliuNormalSkillDesc {
     atk_pct: f64,
     #[serde(deserialize_with = "deserialize_u8")]
     _syzygy_stacks: u8,
@@ -51,8 +51,8 @@ struct NormalSkillDesc {
  * Deals Ice DMG equal to #1[i]% of Jingliu's ATK to a single enemy, and deals Ice DMG equal to #3[i]%
  * of Jingliu's ATK to any adjacent enemies. Gains #2[i] stack(s) of Syzygy after attack ends.
  */
-#[derive(Debug, Clone, Copy, Deserialize_tuple)]
-struct UltimateDesc {
+#[derive(Debug, Clone, Copy, Deserialize_tuple, Serialize, Type)]
+struct JingliuUltimateDesc {
     atk_pct_main: f64,
     #[serde(deserialize_with = "deserialize_u8")]
     _syzygy_stacks: u8,
@@ -72,8 +72,8 @@ struct UltimateDesc {
  * Spectral Transmigration state ends. Syzygy can stack up to 3 times. When Syzygy stacks become 0,
  * Jingliu will exit the Spectral Transmigration state.
  */
-#[derive(Debug, Clone, Copy, Deserialize_tuple)]
-struct TalentDesc {
+#[derive(Debug, Clone, Copy, Deserialize_tuple, Serialize, Type)]
+struct JingliuTalentDesc {
     _unknown: f64,
     _consume_hp_pct: f64,
     _atk_pct_from_hp: f64,
@@ -89,20 +89,21 @@ struct TalentDesc {
  * to #3[i]% of Jingliu's ATK to adjacent enemies. Consumes #2[i] stack(s) of Syzygy. Using
  * this ability does not consume Skill Points.
  */
-#[derive(Debug, Clone, Copy, Deserialize_tuple)]
-struct EnhancedSkillDesc {
+#[derive(Debug, Clone, Copy, Deserialize_tuple, Serialize, Type)]
+struct JingliuEnhancedSkillDesc {
     atk_pct_main: f64,
     #[serde(deserialize_with = "deserialize_u8")]
     _syzygy_stacks: u8,
     _atk_pct_adj: f64,
 }
 
+#[derive(Debug, Serialize, Type)]
 pub struct JingliuDescriptions {
-    basic: Vec<BasicDesc>,
-    normal_skill: Vec<NormalSkillDesc>,
-    ultimate: Vec<UltimateDesc>,
-    talent: Vec<TalentDesc>,
-    enhanced_skill: Vec<EnhancedSkillDesc>,
+    basic: Vec<JingliuBasicDesc>,
+    normal_skill: Vec<JingliuNormalSkillDesc>,
+    ultimate: Vec<JingliuUltimateDesc>,
+    talent: Vec<JingliuTalentDesc>,
+    enhanced_skill: Vec<JingliuEnhancedSkillDesc>,
 }
 
 impl JingliuDescriptions {

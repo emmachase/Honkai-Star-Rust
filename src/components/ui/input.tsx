@@ -10,9 +10,10 @@ export interface InputProps
 const BufferedInput = React.forwardRef<HTMLInputElement, InputProps>(
     ({ onChange, value, ...props }, ref) => {
         const [bufferedValue, setBufferedValue] = useState(value);
+        const [blurHack, setBlurHack] = useState(0);
         useEffect(() => {
             setBufferedValue(value);
-        }, [value]);
+        }, [value, blurHack]);
 
         return (
             <input
@@ -23,6 +24,7 @@ const BufferedInput = React.forwardRef<HTMLInputElement, InputProps>(
                 }}
                 onBlur={(e) => {
                     onChange?.(e);
+                    setBlurHack((h) => h + 1);
                 }}
                 {...props}
             />
@@ -50,14 +52,15 @@ const Input = React.forwardRef<HTMLInputElement, InputProps & { raw?: boolean }>
 Input.displayName = "Input"
 
 const SuffixInput = React.forwardRef<HTMLInputElement, InputProps & { suffix: string }>(
-    ({ className, suffix, type, ...props }, ref) => {
-        return (<Row className={cn("h-10 gap-0 overflow-hidden rounded-md border border-input ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50", className)} ref={ref}>
+    ({ className, suffix, type, disabled, ...props }, ref) => {
+        return (<Row className={cn("h-10 gap-0 overflow-hidden rounded-md border border-input ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2", disabled && "cursor-not-allowed opacity-50", className)} ref={ref}>
             <BufferedInput
                 type={type}
                 className={cn(
                 "flex h-full w-full bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none",
                 )}
                 ref={ref}
+                disabled={disabled}
                 {...props}
             />
             <div className="h-full px-2 bg-border font-bold grid place-items-center">
