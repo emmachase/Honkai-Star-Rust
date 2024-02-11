@@ -5,6 +5,13 @@ import { SliderWithInput } from "@/components/ui/slider";
 import { useDescriptions } from "../utils";
 import { useForm } from "@/utils/form";
 
+export const JingliuDefaultConfig: JingliuConfig = {
+    enhanced_state: true,
+    e1_crit_dmg: true,
+    e2_skill_buff: true,
+    hp_drain_pct: 1.0,
+}
+
 export function JingliuKit(props: {
     characterState: CharacterState,
     value: JingliuConfig,

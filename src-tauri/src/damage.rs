@@ -90,6 +90,7 @@ pub struct EnemyConfig {
     pub resistance: f64,
     pub elemental_weakness: bool,
     pub weakness_broken: bool,
+    pub debuff_count: u8,
 }
 
 /**

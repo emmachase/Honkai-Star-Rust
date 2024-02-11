@@ -23,11 +23,9 @@ use self::{
         prisoner_in_deep_confinement::{PRISONER_IN_DEEP_CONFINEMENT_2P, PRISONER_IN_DEEP_CONFINEMENT_4P},
         the_ashblazing_grand_duke::{THE_ASHBLAZING_GRAND_DUKE_2P, THE_ASHBLAZING_GRAND_DUKE_4P},
         thief_of_shooting_meteor::{THIEF_OF_SHOOTING_METEOR_2P, THIEF_OF_SHOOTING_METEOR_4P},
-        wastelander_of_banditry_desert::{
-            WastelanderOfBanditryDesertConditional,
-            WASTELANDER_OF_BANDITRY_DESERT_2P,
-            WASTELANDER_OF_BANDITRY_DESERT_4P,
-        },
+        wastelander_of_banditry_desert::{WASTELANDER_OF_BANDITRY_DESERT_2P, WASTELANDER_OF_BANDITRY_DESERT_4P},
+        pioneer_diver_of_dead_waters::{PIONEER_DIVER_OF_DEAD_WATERS_2P, PIONEER_DIVER_OF_DEAD_WATERS_4P},
+        watchmaker_master_of_dream_machinations::{WATCHMAKER_MASTER_OF_DREAM_MACHINATIONS_2P, WATCHMAKER_MASTER_OF_DREAM_MACHINATIONS_4P},
     },
     ornament::{
         space_sealing_station::SPACE_SEALING_STATION,
@@ -446,6 +444,8 @@ impl RelicSet {
             RelicSet::MessengerTraversingHackerspace => Some(&MESSENGER_TRAVERSING_HACKERSPACE_2P),
             RelicSet::TheAshblazingGrandDuke => Some(&THE_ASHBLAZING_GRAND_DUKE_2P),
             RelicSet::PrisonerInDeepConfinement => Some(&PRISONER_IN_DEEP_CONFINEMENT_2P),
+            RelicSet::PioneerDiverOfDeadWaters => Some(&PIONEER_DIVER_OF_DEAD_WATERS_2P),
+            RelicSet::WatchmakerMasterOfDreamMachinations => Some(&WATCHMAKER_MASTER_OF_DREAM_MACHINATIONS_2P),
 
             RelicSet::SpaceSealingStation => Some(&SPACE_SEALING_STATION),
             RelicSet::FleetOfTheAgeless => Some(&FLEET_OF_THE_AGELESS),
@@ -477,6 +477,8 @@ impl RelicSet {
             RelicSet::MessengerTraversingHackerspace => Some(&MESSENGER_TRAVERSING_HACKERSPACE_4P),
             RelicSet::TheAshblazingGrandDuke => Some(&THE_ASHBLAZING_GRAND_DUKE_4P),
             RelicSet::PrisonerInDeepConfinement => Some(&PRISONER_IN_DEEP_CONFINEMENT_4P),
+            RelicSet::PioneerDiverOfDeadWaters => Some(&PIONEER_DIVER_OF_DEAD_WATERS_4P),
+            RelicSet::WatchmakerMasterOfDreamMachinations => Some(&WATCHMAKER_MASTER_OF_DREAM_MACHINATIONS_4P),
 
             // No 4p effect on these.
             // Manually list them here so we get a compiler error if we add a new relic set without accounting for it.
@@ -506,11 +508,13 @@ pub struct ConditionalRelicSetEffects {
     pub firesmith_of_lava_forging_4p: bool,
     pub genius_of_brilliant_stars_4p: bool,
     pub band_of_sizzling_thunder_4p: bool,
-    pub wastelander_of_banditry_desert_4p: WastelanderOfBanditryDesertConditional,
+    pub wastelander_of_banditry_desert_4p: bool,
     pub longevous_disciple_4p_stacks: u8,
     pub messenger_traversing_hackerspace_4p: bool,
     pub the_ashblazing_grand_duke_4p_stacks: u8,
     pub prisoner_in_deep_confinement_4p_stacks: u8,
+    pub pioneer_diver_of_dead_waters_4p: bool,
+    pub watchmaker_master_of_dream_machinations_4p: bool,
 
     pub celestial_differentiator: bool,
 }
@@ -523,11 +527,13 @@ impl Default for ConditionalRelicSetEffects {
             firesmith_of_lava_forging_4p: true,
             genius_of_brilliant_stars_4p: true,
             band_of_sizzling_thunder_4p: true,
-            wastelander_of_banditry_desert_4p: WastelanderOfBanditryDesertConditional::None,
+            wastelander_of_banditry_desert_4p: false,
             longevous_disciple_4p_stacks: 2,
             messenger_traversing_hackerspace_4p: false,
             the_ashblazing_grand_duke_4p_stacks: 0,
             prisoner_in_deep_confinement_4p_stacks: 0,
+            pioneer_diver_of_dead_waters_4p: true,
+            watchmaker_master_of_dream_machinations_4p: false,
 
             celestial_differentiator: false,
         }

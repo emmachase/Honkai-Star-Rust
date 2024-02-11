@@ -14,3 +14,5 @@ pub mod longevous_disciple;
 pub mod messenger_traversing_hackerspace;
 pub mod the_ashblazing_grand_duke;
 pub mod prisoner_in_deep_confinement;
+pub mod pioneer_diver_of_dead_waters;
+pub mod watchmaker_master_of_dream_machinations;

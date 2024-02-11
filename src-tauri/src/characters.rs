@@ -1,4 +1,5 @@
 pub mod jingliu;
+pub mod sparkle;
 
 use serde::{Serialize, Deserialize};
 use specta::Type;
@@ -141,9 +142,12 @@ pub struct StatColumnDesc {
 #[macro_export]
 macro_rules! col {
     ($column_type:ident: [$($hit_split:expr),*]) => {
-        StatColumnDesc {
-            column_type: StatColumnType::$column_type,
-            hit_splits: vec![$($hit_split),*]
+        {
+            use crate::characters::{StatColumnType, StatColumnDesc};
+            StatColumnDesc {
+                column_type: StatColumnType::$column_type,
+                hit_splits: vec![$($hit_split),*]
+            }
         }
     };
 }
@@ -153,52 +157,58 @@ pub trait CharacterKit {
      * This function is called once outside of the permutation loop.
      * It should apply character passive effects that affect the character's base stats. (i.e. it shows up in the character's stat sheet)
      */
-    fn apply_base_passives(&self, enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts);
+    fn apply_base_passives(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {}
 
     /**
      * This function is called once outside of the permutation loop.
      * It should apply character passive effects that affect the character's combat stats. (i.e. it only shows up during combat)
      */
-    fn apply_base_combat_passives(&self, enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts);
+    fn apply_base_combat_passives(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {}
 
     /**
      * This function is called once for each relic permutation.
      * It should apply character effects that are conditional based on relic stats (e.g. +10% DMG when SPD > 160)
      * If the effect does not depend on relic stats, it should be applied in [`CharacterKit::apply_base_combat_passives()`] instead.
      */
-    fn apply_common_conditionals(&self, enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts);
+    fn apply_common_conditionals(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _character_stats: &CharacterStats, _boosts: &mut Boosts) {}
 
     /**
      * This function is called multiple times for each relic permutation.
      * It should apply character effects that are conditional based on the type of stat being calculated (e.g. +10% Ultimate DMG)
      */
-    fn apply_stat_type_conditionals(&self, enemy_config: &EnemyConfig, stat_type: StatColumnType, character_state: &CharacterState, boosts: &mut Boosts);
+    fn apply_stat_type_conditionals(&self, _enemy_config: &EnemyConfig, _stat_type: StatColumnType, _character_state: &CharacterState, _character_stats: &CharacterStats, _boosts: &mut Boosts) {}
 
     fn get_stat_columns(&self, enemy_config: &EnemyConfig) -> Vec<StatColumnDesc>;
     // fn get_hit_split(&self, column_type: StatColumnType) -> Vec<f64>;
     fn compute_stat_column(&self, column_type: StatColumnType, split: (usize, &f64), character_state: &CharacterState, character_stats: &CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64;
 }
 
+//=== Self Reminder: Add new characters down here! :) ===
+
 #[derive(Debug, Type, Serialize, Deserialize)]
 pub enum CharacterConfig {
     Jingliu(jingliu::JingliuConfig),
+    Sparkle(sparkle::SparkleConfig),
 }
 
 #[derive(Debug, Type, Serialize)]
 pub enum CharacterDescriptions {
-    Jingliu(jingliu::JingliuDescriptions)
+    Jingliu(jingliu::JingliuDescriptions),
+    Sparkle(sparkle::SparkleDescriptions),
 }
 
 impl CharacterConfig {
     pub fn get_character_id(&self) -> Character {
         match self {
             CharacterConfig::Jingliu(_) => Character::Jingliu,
+            CharacterConfig::Sparkle(_) => Character::Sparkle,
         }
     }
 
     pub fn get_kit(&self) -> Box<dyn CharacterKit+Send+Sync> {
         match self {
             CharacterConfig::Jingliu(config) => Box::new(jingliu::Jingliu::new(*config)),
+            CharacterConfig::Sparkle(config) => Box::new(sparkle::Sparkle::new(*config)),
         }
     }
 }
@@ -207,6 +217,7 @@ impl CharacterDescriptions {
     pub fn get(character: Character) -> Self {
         match character {
             Character::Jingliu => CharacterDescriptions::Jingliu(jingliu::JingliuDescriptions::get()),
+            Character::Sparkle => CharacterDescriptions::Sparkle(sparkle::SparkleDescriptions::get()),
             _ => panic!("Character {:?} does not have descriptions", character),
         }
     }

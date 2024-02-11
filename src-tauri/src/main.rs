@@ -394,7 +394,7 @@ fn calculate_cols(
 
                 let mut total_combat_boosts = base_boosts + combat_boosts;
                 params.light_cone_kit.apply_common_conditionals(&params.enemy_config, &params.light_cone_state, &mut total_combat_boosts);
-                params.character_kit.apply_common_conditionals(&params.enemy_config, &params.character_state, &mut total_combat_boosts);
+                params.character_kit.apply_common_conditionals(&params.enemy_config, &params.character_state, &params.character_stats, &mut total_combat_boosts);
                 active_sets.apply_common_conditionals(RelicSetKitParams {
                     enemy_config: &params.enemy_config,
                     conditionals: &params.relic_conditionals,
@@ -409,7 +409,7 @@ fn calculate_cols(
                     let column_type = *column_type;
 
                     params.light_cone_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.light_cone_state, &mut skill_boosts);
-                    params.character_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.character_state, &mut skill_boosts);
+                    params.character_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.character_state, &params.character_stats, &mut skill_boosts);
                     active_sets.apply_stat_type_conditionals(RelicSetKitParams {
                         enemy_config: &params.enemy_config,
                         conditionals: &params.relic_conditionals,
@@ -528,6 +528,14 @@ fn get_description(
     CharacterDescriptions::get(character)
 }
 
+#[tauri::command(async)]
+#[specta::specta]
+fn get_char_pic(
+    character: Character
+) -> String {
+    use_character(character).preview.to_owned()
+}
+
 pub struct Flags {
     pub running: Arc<RwLock<bool>>
 }
@@ -535,7 +543,7 @@ pub struct Flags {
 fn main() {
     let specta_builder = {
         let specta_builder = tauri_specta::ts::builder()
-            .commands(tauri_specta::collect_commands![prank_him_john, stop_pranking, parse_kelz, get_description]);
+            .commands(tauri_specta::collect_commands![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_pic]);
 
         #[cfg(debug_assertions)]
         let specta_builder = specta_builder.path("../src/bindings.gen.ts");
@@ -546,7 +554,7 @@ fn main() {
     tauri::Builder::default()
         .manage(Flags { running: Arc::new(RwLock::new(false)) })
         .plugin(specta_builder)
-        .invoke_handler(tauri::generate_handler![prank_him_john, stop_pranking, parse_kelz, get_description])
+        .invoke_handler(tauri::generate_handler![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_pic])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

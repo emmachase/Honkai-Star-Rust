@@ -1,12 +1,5 @@
 use crate::{data::Element, relics::{RelicSetKit, RelicSetKitParams}};
 
-#[derive(Debug, Copy, Clone)]
-pub enum WastelanderOfBanditryDesertConditional {
-    None,
-    Debuffed,
-    Imprisoned
-}
-
 pub struct WastelanderOfBanditryDesert2Piece;
 pub struct WastelanderOfBanditryDesert4Piece;
 pub static WASTELANDER_OF_BANDITRY_DESERT_2P: WastelanderOfBanditryDesert2Piece = WastelanderOfBanditryDesert2Piece;
@@ -22,15 +15,13 @@ impl RelicSetKit for WastelanderOfBanditryDesert2Piece {
 
 impl RelicSetKit for WastelanderOfBanditryDesert4Piece {
     fn apply_common_conditionals(&self, p: RelicSetKitParams) {
-        match p.conditionals.wastelander_of_banditry_desert_4p {
-            WastelanderOfBanditryDesertConditional::None => {},
-            WastelanderOfBanditryDesertConditional::Debuffed => {
-                p.boosts.crit_rate += 0.10;
-            },
-            WastelanderOfBanditryDesertConditional::Imprisoned => {
-                p.boosts.crit_rate += 0.10;
-                p.boosts.crit_dmg += 0.20;
-            }
+        if p.enemy_config.debuff_count > 0 {
+            p.boosts.crit_rate += 0.10;
+        }
+
+        if p.conditionals.wastelander_of_banditry_desert_4p {
+            p.boosts.crit_rate += 0.10;
+            p.boosts.crit_dmg += 0.20;
         }
     }
 }

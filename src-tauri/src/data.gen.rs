@@ -22,6 +22,8 @@ pub enum RelicSet {
     MessengerTraversingHackerspace,
     TheAshblazingGrandDuke,
     PrisonerInDeepConfinement,
+    PioneerDiverOfDeadWaters,
+    WatchmakerMasterOfDreamMachinations,
     SpaceSealingStation,
     FleetOfTheAgeless,
     PanCosmicCommercialEnterprise,
@@ -37,7 +39,7 @@ pub enum RelicSet {
 }
 
 impl RelicSet {
-    pub const COUNT: usize = 28;
+    pub const COUNT: usize = 30;
     pub const fn to_id(self) -> &'static str {
         match self {
             RelicSet::PasserbyOfWanderingCloud => "101",
@@ -56,6 +58,8 @@ impl RelicSet {
             RelicSet::MessengerTraversingHackerspace => "114",
             RelicSet::TheAshblazingGrandDuke => "115",
             RelicSet::PrisonerInDeepConfinement => "116",
+            RelicSet::PioneerDiverOfDeadWaters => "117",
+            RelicSet::WatchmakerMasterOfDreamMachinations => "118",
             RelicSet::SpaceSealingStation => "301",
             RelicSet::FleetOfTheAgeless => "302",
             RelicSet::PanCosmicCommercialEnterprise => "303",
@@ -89,6 +93,8 @@ impl RelicSet {
             "Messenger Traversing Hackerspace" => Some(RelicSet::MessengerTraversingHackerspace),
             "The Ashblazing Grand Duke" => Some(RelicSet::TheAshblazingGrandDuke),
             "Prisoner in Deep Confinement" => Some(RelicSet::PrisonerInDeepConfinement),
+            "Pioneer Diver of Dead Waters" => Some(RelicSet::PioneerDiverOfDeadWaters),
+            "Watchmaker, Master of Dream Machinations" => Some(RelicSet::WatchmakerMasterOfDreamMachinations),
             "Space Sealing Station" => Some(RelicSet::SpaceSealingStation),
             "Fleet of the Ageless" => Some(RelicSet::FleetOfTheAgeless),
             "Pan-Cosmic Commercial Enterprise" => Some(RelicSet::PanCosmicCommercialEnterprise),
@@ -164,6 +170,14 @@ pub enum LightCone {
     CarveTheMoonWeaveTheClouds,
     NowhereToRun,
     TodayIsAnotherPeacefulDay,
+    WhatIsReal,
+    DreamvilleAdventure,
+    FinalVictor,
+    FlamesAfar,
+    DestinySThreadsForewoven,
+    TheDayTheCosmosFell,
+    ItSShowtime,
+    IndeliblePromise,
     BeforeTheTutorialMissionStarts,
     HeyOverHere,
     NightOnTheMilkyWay,
@@ -187,6 +201,8 @@ pub enum LightCone {
     AnInstantBeforeAGaze,
     PastSelfInMirror,
     BaptismOfPureThought,
+    EarthlyEscapade,
+    ReforgedRemembrance,
     OnTheFallOfAnAeon,
     CruisingInTheStellarSea,
     TextureOfMemories,
@@ -194,7 +210,7 @@ pub enum LightCone {
 }
 
 impl LightCone {
-    pub const COUNT: usize = 83;
+    pub const COUNT: usize = 93;
     pub const fn to_id(self) -> &'static str {
         match self {
             LightCone::Arrows => "20000",
@@ -253,6 +269,14 @@ impl LightCone {
             LightCone::CarveTheMoonWeaveTheClouds => "21032",
             LightCone::NowhereToRun => "21033",
             LightCone::TodayIsAnotherPeacefulDay => "21034",
+            LightCone::WhatIsReal => "21035",
+            LightCone::DreamvilleAdventure => "21036",
+            LightCone::FinalVictor => "21037",
+            LightCone::FlamesAfar => "21038",
+            LightCone::DestinySThreadsForewoven => "21039",
+            LightCone::TheDayTheCosmosFell => "21040",
+            LightCone::ItSShowtime => "21041",
+            LightCone::IndeliblePromise => "21042",
             LightCone::BeforeTheTutorialMissionStarts => "22000",
             LightCone::HeyOverHere => "22001",
             LightCone::NightOnTheMilkyWay => "23000",
@@ -276,6 +300,8 @@ impl LightCone {
             LightCone::AnInstantBeforeAGaze => "23018",
             LightCone::PastSelfInMirror => "23019",
             LightCone::BaptismOfPureThought => "23020",
+            LightCone::EarthlyEscapade => "23021",
+            LightCone::ReforgedRemembrance => "23022",
             LightCone::OnTheFallOfAnAeon => "24000",
             LightCone::CruisingInTheStellarSea => "24001",
             LightCone::TextureOfMemories => "24002",
@@ -341,6 +367,14 @@ impl LightCone {
             "Carve the Moon, Weave the Clouds" => Some(LightCone::CarveTheMoonWeaveTheClouds),
             "Nowhere to Run" => Some(LightCone::NowhereToRun),
             "Today Is Another Peaceful Day" => Some(LightCone::TodayIsAnotherPeacefulDay),
+            "What Is Real?" => Some(LightCone::WhatIsReal),
+            "Dreamville Adventure" => Some(LightCone::DreamvilleAdventure),
+            "Final Victor" => Some(LightCone::FinalVictor),
+            "Flames Afar" => Some(LightCone::FlamesAfar),
+            "Destiny's Threads Forewoven" => Some(LightCone::DestinySThreadsForewoven),
+            "The Day The Cosmos Fell" => Some(LightCone::TheDayTheCosmosFell),
+            "It's Showtime" => Some(LightCone::ItSShowtime),
+            "Indelible Promise" => Some(LightCone::IndeliblePromise),
             "Before the Tutorial Mission Starts" => Some(LightCone::BeforeTheTutorialMissionStarts),
             "Hey, Over Here" => Some(LightCone::HeyOverHere),
             "Night on the Milky Way" => Some(LightCone::NightOnTheMilkyWay),
@@ -364,6 +398,8 @@ impl LightCone {
             "An Instant Before A Gaze" => Some(LightCone::AnInstantBeforeAGaze),
             "Past Self in Mirror" => Some(LightCone::PastSelfInMirror),
             "Baptism of Pure Thought" => Some(LightCone::BaptismOfPureThought),
+            "Earthly Escapade" => Some(LightCone::EarthlyEscapade),
+            "Reforged Remembrance" => Some(LightCone::ReforgedRemembrance),
             "On the Fall of an Aeon" => Some(LightCone::OnTheFallOfAnAeon),
             "Cruising in the Stellar Sea" => Some(LightCone::CruisingInTheStellarSea),
             "Texture of Memories" => Some(LightCone::TextureOfMemories),
@@ -415,6 +451,9 @@ pub enum Character {
     Argenti,
     RuanMei,
     DrRatio,
+    Sparkle,
+    BlackSwan,
+    Misha,
     PhysicalTrailblazerM,
     PhysicalTrailblazerF,
     FireTrailblazerM,
@@ -422,7 +461,7 @@ pub enum Character {
 }
 
 impl Character {
-    pub const COUNT: usize = 44;
+    pub const COUNT: usize = 47;
     pub const fn to_id(self) -> &'static str {
         match self {
             Character::March7th => "1001",
@@ -465,6 +504,9 @@ impl Character {
             Character::Argenti => "1302",
             Character::RuanMei => "1303",
             Character::DrRatio => "1305",
+            Character::Sparkle => "1306",
+            Character::BlackSwan => "1307",
+            Character::Misha => "1312",
             Character::PhysicalTrailblazerM => "8001",
             Character::PhysicalTrailblazerF => "8002",
             Character::FireTrailblazerM => "8003",
@@ -514,6 +556,9 @@ impl Character {
             "Argenti" => Some(Character::Argenti),
             "Ruan Mei" => Some(Character::RuanMei),
             "Dr. Ratio" => Some(Character::DrRatio),
+            "Sparkle" => Some(Character::Sparkle),
+            "Black Swan" => Some(Character::BlackSwan),
+            "Misha" => Some(Character::Misha),
             "{NICKNAME}" => Some(Character::PhysicalTrailblazerM),
             "{NICKNAME}" => Some(Character::PhysicalTrailblazerF),
             "{NICKNAME}" => Some(Character::FireTrailblazerM),

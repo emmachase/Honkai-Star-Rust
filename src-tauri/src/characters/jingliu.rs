@@ -125,10 +125,6 @@ impl JingliuDescriptions {
 // TODO: get descs from type instead of order
 
 impl CharacterKit for Jingliu {
-    fn apply_base_passives(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {
-        // No base passives
-    }
-
     fn apply_base_combat_passives(&self, _enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts) {
         if self.config.enhanced_state {
             if character_state.traces.ability_1 {
@@ -155,11 +151,7 @@ impl CharacterKit for Jingliu {
         }
     }
 
-    fn apply_common_conditionals(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {
-        // No conditional passives
-    }
-
-    fn apply_stat_type_conditionals(&self, _enemy_config: &EnemyConfig, stat_type: StatColumnType, character_state: &CharacterState, boosts: &mut Boosts) {
+    fn apply_stat_type_conditionals(&self, _enemy_config: &EnemyConfig, stat_type: StatColumnType, character_state: &CharacterState, _character_stats: &CharacterStats, boosts: &mut Boosts) {
         match stat_type {
             StatColumnType::SkillDamage => {
                 if self.config.enhanced_state && character_state.eidolon >= 2 && self.config.e2_skill_buff {

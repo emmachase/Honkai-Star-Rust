@@ -17,6 +17,9 @@ try {
 },
 async getDescription(character: Character) : Promise<CharacterDescriptions> {
 return await TAURI_INVOKE("plugin:tauri-specta|get_description", { character });
+},
+async getCharPic(character: Character) : Promise<string> {
+return await TAURI_INVOKE("plugin:tauri-specta|get_char_pic", { character });
 }
 }
 
@@ -24,16 +27,16 @@ return await TAURI_INVOKE("plugin:tauri-specta|get_description", { character });
 
 /** user-defined types **/
 
-export type Character = "March7th" | "DanHeng" | "Himeko" | "Welt" | "Kafka" | "SilverWolf" | "Arlan" | "Asta" | "Herta" | "Bronya" | "Seele" | "Serval" | "Gepard" | "Natasha" | "Pela" | "Clara" | "Sampo" | "Hook" | "Lynx" | "Luka" | "TopazAndNumby" | "Qingque" | "Tingyun" | "Luocha" | "JingYuan" | "Blade" | "Sushang" | "Yukong" | "FuXuan" | "Yanqing" | "Guinaifen" | "Bailu" | "Jingliu" | "DanHengImbibitorLunae" | "Xueyi" | "Hanya" | "Huohuo" | "Argenti" | "RuanMei" | "DrRatio" | "PhysicalTrailblazerM" | "PhysicalTrailblazerF" | "FireTrailblazerM" | "FireTrailblazerF"
-export type CharacterConfig = { Jingliu: JingliuConfig }
-export type CharacterDescriptions = { Jingliu: JingliuDescriptions }
+export type Character = "March7th" | "DanHeng" | "Himeko" | "Welt" | "Kafka" | "SilverWolf" | "Arlan" | "Asta" | "Herta" | "Bronya" | "Seele" | "Serval" | "Gepard" | "Natasha" | "Pela" | "Clara" | "Sampo" | "Hook" | "Lynx" | "Luka" | "TopazAndNumby" | "Qingque" | "Tingyun" | "Luocha" | "JingYuan" | "Blade" | "Sushang" | "Yukong" | "FuXuan" | "Yanqing" | "Guinaifen" | "Bailu" | "Jingliu" | "DanHengImbibitorLunae" | "Xueyi" | "Hanya" | "Huohuo" | "Argenti" | "RuanMei" | "DrRatio" | "Sparkle" | "BlackSwan" | "Misha" | "PhysicalTrailblazerM" | "PhysicalTrailblazerF" | "FireTrailblazerM" | "FireTrailblazerF"
+export type CharacterConfig = { Jingliu: JingliuConfig } | { Sparkle: SparkleConfig }
+export type CharacterDescriptions = { Jingliu: JingliuDescriptions } | { Sparkle: SparkleDescriptions }
 export type CharacterSkillState = { basic: number; skill: number; ult: number; talent: number }
 export type CharacterState = { level: number; ascension: number; eidolon: number; skills: CharacterSkillState; traces: CharacterTraceState }
 export type CharacterStats = { level: number; ascension: number; element: Element; hp: number; atk: number; def: number; spd: number; effect_res: number; crit_rate: number; crit_dmg: number; break_effect: number; energy_recharge: number; outgoing_healing_boost: number; elemental_dmg_bonus: number; effect_hit_rate: number }
 export type CharacterTraceState = { ability_1: boolean; ability_2: boolean; ability_3: boolean; stat_1: boolean; stat_2: boolean; stat_3: boolean; stat_4: boolean; stat_5: boolean; stat_6: boolean; stat_7: boolean; stat_8: boolean; stat_9: boolean; stat_10: boolean }
 export type EffectPropertyType = "HPDelta" | "AttackDelta" | "DefenceDelta" | "SpeedDelta" | "HPAddedRatio" | "AttackAddedRatio" | "DefenceAddedRatio" | "CriticalChanceBase" | "CriticalDamageBase" | "HealRatioBase" | "StatusProbabilityBase" | "PhysicalAddedRatio" | "FireAddedRatio" | "IceAddedRatio" | "ThunderAddedRatio" | "WindAddedRatio" | "QuantumAddedRatio" | "ImaginaryAddedRatio" | "AllDamageTypeAddedRatio" | "BreakDamageAddedRatioBase" | "SPRatioBase" | "StatusResistanceBase"
 export type Element = "Physical" | "Fire" | "Ice" | "Thunder" | "Wind" | "Quantum" | "Imaginary"
-export type EnemyConfig = { count: number; level: number; resistance: number; elemental_weakness: boolean; weakness_broken: boolean }
+export type EnemyConfig = { count: number; level: number; resistance: number; elemental_weakness: boolean; weakness_broken: boolean; debuff_count: number }
 export type IShallBeMyOwnSwordConfig = { eclipse_stacks: number; max_stack_def_pen: boolean }
 /**
  * 
@@ -82,11 +85,46 @@ export type JingliuUltimateDesc = { atk_pct_main: number; _syzygy_stacks: number
 export type LightConeConfig = { IShallBeMyOwnSword: IShallBeMyOwnSwordConfig }
 export type LightConeState = { level: number; ascension: number; superimposition: number }
 export type Relic = { id: string; set: RelicSet; slot: RelicSlot; level: number; main_stat: [EffectPropertyType, number]; sub_stats: ([EffectPropertyType, number])[] }
-export type RelicSet = "PasserbyOfWanderingCloud" | "MusketeerOfWildWheat" | "KnightOfPurityPalace" | "HunterOfGlacialForest" | "ChampionOfStreetwiseBoxing" | "GuardOfWutheringSnow" | "FiresmithOfLavaForging" | "GeniusOfBrilliantStars" | "BandOfSizzlingThunder" | "EagleOfTwilightLine" | "ThiefOfShootingMeteor" | "WastelanderOfBanditryDesert" | "LongevousDisciple" | "MessengerTraversingHackerspace" | "TheAshblazingGrandDuke" | "PrisonerInDeepConfinement" | "SpaceSealingStation" | "FleetOfTheAgeless" | "PanCosmicCommercialEnterprise" | "BelobogOfTheArchitects" | "CelestialDifferentiator" | "InertSalsotto" | "TaliaKingdomOfBanditry" | "SprightlyVonwacq" | "RutilantArena" | "BrokenKeel" | "FirmamentFrontlineGlamoth" | "PenaconyLandOfTheDreams"
+export type RelicSet = "PasserbyOfWanderingCloud" | "MusketeerOfWildWheat" | "KnightOfPurityPalace" | "HunterOfGlacialForest" | "ChampionOfStreetwiseBoxing" | "GuardOfWutheringSnow" | "FiresmithOfLavaForging" | "GeniusOfBrilliantStars" | "BandOfSizzlingThunder" | "EagleOfTwilightLine" | "ThiefOfShootingMeteor" | "WastelanderOfBanditryDesert" | "LongevousDisciple" | "MessengerTraversingHackerspace" | "TheAshblazingGrandDuke" | "PrisonerInDeepConfinement" | "PioneerDiverOfDeadWaters" | "WatchmakerMasterOfDreamMachinations" | "SpaceSealingStation" | "FleetOfTheAgeless" | "PanCosmicCommercialEnterprise" | "BelobogOfTheArchitects" | "CelestialDifferentiator" | "InertSalsotto" | "TaliaKingdomOfBanditry" | "SprightlyVonwacq" | "RutilantArena" | "BrokenKeel" | "FirmamentFrontlineGlamoth" | "PenaconyLandOfTheDreams"
 export type RelicSlot = "Head" | "Hands" | "Chest" | "Feet" | "PlanarSphere" | "LinkRope"
 export type ResolvedCalculatorResult = { relic_perm: string[]; cols: ([string, number])[]; calculated_stats: [CharacterStats, CharacterStats] }
 export type SortResultsSerde = { base: SortResultsSerdeBase; combat: SortResultsSerdeBase; cols: ([string, ResolvedCalculatorResult[]])[] }
 export type SortResultsSerdeBase = { hp: ResolvedCalculatorResult[]; atk: ResolvedCalculatorResult[]; def: ResolvedCalculatorResult[]; spd: ResolvedCalculatorResult[]; effect_res: ResolvedCalculatorResult[]; crit_rate: ResolvedCalculatorResult[]; crit_dmg: ResolvedCalculatorResult[]; break_effect: ResolvedCalculatorResult[]; energy_recharge: ResolvedCalculatorResult[]; outgoing_healing_boost: ResolvedCalculatorResult[]; elemental_dmg_bonus: ResolvedCalculatorResult[]; effect_hit_rate: ResolvedCalculatorResult[] }
+/**
+ * 
+ * * Deals Quantum DMG equal to #1[i]% of Sparkle's ATK to a single enemy.
+ * 
+ */
+export type SparkleBasicDesc = { atk_pct: number }
+export type SparkleConfig = { skill_cd_buff: boolean; cipher_buff: boolean; talent_dmg_stacks: number; quantum_allies: number }
+export type SparkleDescriptions = { basic: SparkleBasicDesc[]; skill: SparkleSkillDesc[]; ultimate: SparkleUltimateDesc[]; talent: SparkleTalentDesc[] }
+/**
+ * 
+ * * Increases the CRIT DMG of a single target ally by #1[f1]% of Sparkle's
+ * * CRIT DMG plus #2[f1]%, lasting for #3[i] turn(s). And at the same time,
+ * * Advances Forward this ally's action by #4[i]%.\nWhen Sparkle uses this
+ * * ability on herself, the Action Advance effect will not trigger.
+ * 
+ */
+export type SparkleSkillDesc = { crit_dmg_pct: number; crit_dmg_flat: number; duration: number; action_advance: number }
+/**
+ * 
+ * * While Sparkle is on the battlefield, additionally increases the max number
+ * * of Skill Points by #3[i]. Whenever an ally consumes 1 Skill Point, all
+ * * allies' DMG dealt increases by #2[f1]%. This effect lasts for #1[i] turn(s)
+ * * and can stack up to #4[i] time(s).
+ * 
+ */
+export type SparkleTalentDesc = { duration: number; dmg_boost_pct: number; skill_points: number; stacks: number }
+/**
+ * 
+ * * Recovers #2[i] Skill Points for the team and grants all allies Cipher.
+ * * For allies with Cipher, each stack of the DMG Boost effect provided by
+ * * Sparkle's Talent additionally increases by #3[f1]%, lasting for #4[i]
+ * * turns.
+ * 
+ */
+export type SparkleUltimateDesc = { _unknown: number; skill_points: number; dmg_boost_pct: number; duration: number }
 
 /** tauri-specta globals **/
 

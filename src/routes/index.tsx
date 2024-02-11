@@ -1,30 +1,26 @@
-import { EffectPropertyType, IShallBeMyOwnSwordConfig, JingliuConfig, Relic, RelicSlot, ResolvedCalculatorResult, SortResultsSerde, commands } from "@/bindings.gen";
+import { Character, CharacterConfig, EffectPropertyType, IShallBeMyOwnSwordConfig, JingliuConfig, Relic, RelicSlot, ResolvedCalculatorResult, SortResultsSerde, commands } from "@/bindings.gen";
 import { OptimizerTable } from "@/components/domain/optimizer-table";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Column, Row } from "@/components/util/flex";
+import { CharacterKitComponent, CharacterKitMap, Characters } from "@/kits/characters";
 import { JingliuKit } from "@/kits/characters/jingliu";
 import { IShallBeMyOwnSwordKit } from "@/kits/lightcones/i-shall-be-my-own-sword";
 import { useCalcs, useData } from "@/store";
 import { cn } from "@/utils";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { PropsWithChildren, Suspense, useEffect, useMemo, useState } from "react";
+import { PropsWithChildren, Suspense, startTransition, useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/")({
     component: Index,
 });
 
-enum Characters {
-    Jingliu = "jingliu",
-    Xueyi = "xueyi",
-    Sparkle = "sparkle",
-}
-
 function Card({ children, className, ...props }: PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>) {
     return (
-        <div className={cn("border p-4 rounded-md bg-card w-[300px]", className)} {...props}>
+        <div className={cn("border p-4 rounded-md bg-card w-[260px]", className)} {...props}>
             {children}
         </div>
     );
@@ -226,6 +222,25 @@ function MainStatFilterCard(props: {
     )
 }
 
+function CharacterPreview(props: { character: Character }) {
+    const src = useSuspenseQuery({
+        queryKey: ["character_preview", props.character],
+        queryFn: () => commands.getCharPic(props.character),
+    })
+
+    return <img src={"/hsr/" + src.data} className="w-full h-[300px] object-cover"/>
+}
+
+function CharacterPreviewCard(props: { character: Character }) {
+    return (
+        <Card className="p-0 bg-transparent">
+            <Suspense fallback="Loading...">
+                <CharacterPreview character={props.character}/>
+            </Suspense>
+        </Card>
+    )
+}
+
 const characterState = {
     level: 80,
     eidolon: 0,
@@ -259,15 +274,35 @@ const lcState = {
     superimposition: 1 - 1,
 }
 
-function Index() {
-    const [character, setCharacter] = useState<string>(Characters.Jingliu);
+function CharacterKitCard<C extends Characters>(props: { character: C, onChange?: (value: CharacterConfig) => void }) {
+    type Config = (typeof CharacterKitMap)[C]["defaultConfig"];
+    const characterKitShit = CharacterKitMap[props.character];
+    const MyComponent = characterKitShit.component as CharacterKitComponent<Config>;
+    const [kit, setKit] = useState<Config>(characterKitShit.defaultConfig);
+    useEffect(() => {
+        if (props.onChange) {
+            props.onChange(characterKitShit.wrapConfig(kit));
+        }
+    }, [kit]);
 
-    const [kit, setKit] = useState<JingliuConfig>({
-        enhanced_state: true,
-        e1_crit_dmg: true,
-        e2_skill_buff: true,
-        hp_drain_pct: 1.0,
-    });
+    return (
+        <Card>
+            <Suspense fallback="Loading...">
+                <MyComponent
+                    characterState={characterState}
+                    value={kit}
+                    onChange={setKit}
+                />
+            </Suspense>
+        </Card>
+    )
+}
+
+function Index() {
+    const [character, setCharacter] = useState<Characters>(Characters.Jingliu);
+
+    // const characterKitShit = CharacterKitMap[character];
+    const [kit, setKit] = useState<CharacterConfig>();
 
     const [lcKit, setLcKit] = useState<IShallBeMyOwnSwordConfig>({
         eclipse_stacks: 3,
@@ -287,10 +322,16 @@ function Index() {
         if (running) {
             await commands.stopPranking();
         } else {
+            if (!kit) {
+                console.error("No kit");
+                return;
+            }
+
             setRunning(true);
             setResult(await commands.prankHimJohn(
                 filteredRelics,
-                { Jingliu: kit },
+                // { Jingliu: kit },
+                kit,
                 characterState,
                 { IShallBeMyOwnSword: lcKit },
                 lcState,
@@ -301,6 +342,7 @@ function Index() {
                     resistance: 0.2,
                     elemental_weakness: true,
                     weakness_broken: false,
+                    debuff_count: 3,
                 },
             ));
             setRunning(false);
@@ -312,25 +354,35 @@ function Index() {
             <h3>Welcome Home!</h3>
             <Combobox
                 value={character}
-                onChange={setCharacter}
+                onChange={(c) => startTransition(() => {
+                    setCharacter(c)
+                    // setKit(CharacterKitMap[c].defaultConfig)
+                })}
                 deselectable={false}
                 options={[
                     { value: Characters.Jingliu, label: "Jingliu" },
-                    { value: Characters.Xueyi, label: "Xueyi" },
+                    // { value: Characters.Xueyi, label: "Xueyi" },
                     { value: Characters.Sparkle, label: "Sparkle" },
                 ]}
             />
 
             <Row className="flex-wrap gap-2 justify-center">
-                <Card>
+                {/* <Card className="p-0 bg-transparent">
+                    <img src="/hsr/image/character_preview/1212.png" className="w-full h-[300px] object-cover"/>
+                </Card> */}
+                <CharacterPreviewCard character={character as Character} />
+
+                {/* <Card>
                     <Suspense fallback="Loading...">
-                        <JingliuKit
+                        <characterKitShit.component
                             characterState={characterState}
-                            value={kit}
+                            value={kit as any}
                             onChange={setKit}
                         />
                     </Suspense>
-                </Card>
+                </Card> */}
+
+                <CharacterKitCard key={character} character={character} onChange={setKit} />
 
                 <Card>
                     <Suspense fallback="Loading...">

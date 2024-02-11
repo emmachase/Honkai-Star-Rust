@@ -71,7 +71,6 @@ export function SliderWithInput({label, disabled, value, onChange, min, max, dis
                 value={[rescaledValue]}
                 onValueChange={([x]) => {
                     onChange?.(min! + domain*roundToStep(x - displayMin!)/range)
-                    console.log(`${min} + ${domain} * (${x} - ${displayMin}) / ${range} = ${min! + domain*(x - displayMin!)/range}`)
                 }}
 
                 {...props}
