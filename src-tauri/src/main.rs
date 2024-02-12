@@ -8,11 +8,10 @@ use std::sync::RwLock;
 use std::thread::available_parallelism;
 use std::{thread, sync::Arc};
 
-use characters::jingliu::JingliuDescriptions;
 use characters::{CharacterConfig, CharacterDescriptions, CharacterKit, StatColumnDesc, StatColumnType};
 use damage::CharacterStats;
-use data::{CharacterDescriptor, RelicSlot, EffectPropertyType};
-use data_mappings::{Character, RelicSet};
+use data::{use_light_cone, CharacterDescriptor, EffectPropertyType, RelicSlot};
+use data_mappings::{Character, LightCone, RelicSet};
 use lightcones::LightConeConfig;
 use relics::{Relic, RelicSetKit, ConditionalRelicSetEffects, RelicSetKitParams};
 use scans::KelZScan;
@@ -44,19 +43,19 @@ fn prank_him_john(
     relics: Vec<Relic>,
     character_cfg: CharacterConfig,
     character_state: CharacterState,
-    light_cone_cfg: LightConeConfig,
-    light_cone_state: LightConeState,
+    light_cone: Option<(LightConeConfig, LightConeState)>,
     enemy_config: EnemyConfig
 ) -> SortResultsSerde {
     let character_id = character_cfg.get_character_id();
     let character = use_character(character_id);
 
-    let light_cone_id = light_cone_cfg.get_light_cone_id();
+    // let light_cone_id = light_cone_cfg.get_light_cone_id();
 
-    let character_stats = calculate_character_base_stats((character_id, character_state), Some((light_cone_id, light_cone_state)));
+    let character_stats = calculate_character_base_stats((character_id, character_state), &light_cone);
 
     let kit = character_cfg.get_kit();
-    let lc_kit = light_cone_cfg.get_kit();
+    // let lc_kit = light_cone_cfg.get_kit();
+    let light_cone = light_cone.map(|(lc_cfg, lc_state)| (Arc::from(lc_cfg.get_kit()), lc_state));
 
     let relics_by_slot = vec![
         relics.clone().into_iter().filter(|r| r.slot == RelicSlot::Head).collect::<Vec<_>>(),
@@ -76,8 +75,9 @@ fn prank_him_john(
             character_kit: Arc::from(kit),
             character_state,
             character_stats,
-            light_cone_kit: Arc::from(lc_kit),
-            light_cone_state,
+            // light_cone_kit: Arc::from(lc_kit),
+            // light_cone_state,
+            light_cone,
             enemy_config,
             relic_conditionals: ConditionalRelicSetEffects::default(),
         },
@@ -122,8 +122,9 @@ struct CalculatorParameters {
     character_kit: Arc<dyn CharacterKit+Sync+Send>,
     character_state: CharacterState,
     character_stats: CharacterStats,
-    light_cone_kit: Arc<dyn LightConeKit+Sync+Send>,
-    light_cone_state: LightConeState,
+    // light_cone_kit: Arc<dyn LightConeKit+Sync+Send>,
+    // light_cone_state: LightConeState,
+    light_cone: Option<(Arc<dyn LightConeKit+Sync+Send>, LightConeState)>,
     enemy_config: EnemyConfig,
     relic_conditionals: ConditionalRelicSetEffects
 }
@@ -216,7 +217,7 @@ fn clone_maker(_: &Vec<usize>, item: &CalculatorResult, _: f64) -> CalculatorRes
 }
 
 impl<H: PartialEq+Ord+Comparable, I: PartialEq, P> AddToHeap<H, I, P> for BinaryHeap<Reverse<H>> {
-    fn add_to_heap(&mut self, top_k: usize, item: &I, relic_perm: P, maker: fn(P, &I, f64) -> H, comparable: f64) { // maker: fn(P, &I, f64) -> H, comparator: fn(&H, &I) -> Ordering) {
+    fn add_to_heap(&mut self, top_k: usize, item: &I, relic_perm: P, maker: fn(P, &I, f64) -> H, comparable: f64) {
         let cur_min = self.peek();
 
         if self.len() < top_k || cur_min.unwrap().0.get_comparable() < comparable {
@@ -255,38 +256,21 @@ pub struct SortResultsSerde {
     pub cols: Vec<(String, Vec<ResolvedCalculatorResult>)>,
 }
 
+macro_rules! from_heap {
+    ($heap:expr, $relics_by_slot:ident, [$($col:ident),*]) => {
+        SortResultsSerdeBase {
+            $(
+                $col: $heap.$col.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, $relics_by_slot)) }).collect(),
+            )*
+        }
+    };
+}
+
 impl From<(SortResults, &Vec<Vec<Relic>>)> for SortResultsSerde {
     fn from((sort, relics_by_slot): (SortResults, &Vec<Vec<Relic>>)) -> Self {
         Self {
-            base: SortResultsSerdeBase {
-                hp: sort.base.hp.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                atk: sort.base.atk.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                def: sort.base.def.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                spd: sort.base.spd.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                effect_res: sort.base.effect_res.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                crit_rate: sort.base.crit_rate.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                crit_dmg: sort.base.crit_dmg.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                break_effect: sort.base.break_effect.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                energy_recharge: sort.base.energy_recharge.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                outgoing_healing_boost: sort.base.outgoing_healing_boost.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                elemental_dmg_bonus: sort.base.elemental_dmg_bonus.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                effect_hit_rate: sort.base.effect_hit_rate.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-            },
-
-            combat: SortResultsSerdeBase {
-                hp: sort.combat.hp.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                atk: sort.combat.atk.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                def: sort.combat.def.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                spd: sort.combat.spd.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                effect_res: sort.combat.effect_res.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                crit_rate: sort.combat.crit_rate.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                crit_dmg: sort.combat.crit_dmg.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                break_effect: sort.combat.break_effect.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                energy_recharge: sort.combat.energy_recharge.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                outgoing_healing_boost: sort.combat.outgoing_healing_boost.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                elemental_dmg_bonus: sort.combat.elemental_dmg_bonus.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-                effect_hit_rate: sort.combat.effect_hit_rate.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect(),
-            },
+            base:   from_heap!(sort.base,   relics_by_slot, [hp, atk, def, spd, effect_res, crit_rate, crit_dmg, break_effect, energy_recharge, outgoing_healing_boost, elemental_dmg_bonus, effect_hit_rate]),
+            combat: from_heap!(sort.combat, relics_by_slot, [hp, atk, def, spd, effect_res, crit_rate, crit_dmg, break_effect, energy_recharge, outgoing_healing_boost, elemental_dmg_bonus, effect_hit_rate]),
 
             cols: sort.cols.into_iter().map(|(column_type, heap)| {
                 (column_type.to_name().to_owned(), heap.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect())
@@ -299,7 +283,7 @@ impl Eq for CalculatorResult {}
 
 impl PartialOrd for CalculatorResult {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.get_comparable().partial_cmp(&other.get_comparable()) // TODO
+        self.get_comparable().partial_cmp(&other.get_comparable())
     }
 }
 
@@ -307,6 +291,24 @@ impl Ord for CalculatorResult {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.partial_cmp(other).expect("you done goofed")
     }
+}
+
+macro_rules! add_presult_to_heap {
+    ($all_results:ident, $top_k:ident, $presult:ident, $relic_perm:ident, [$($col:ident),*]) => {
+        $(
+            $all_results.base  .$col.add_to_heap($top_k, &$presult, &$relic_perm, eval_presult, $presult.calculated_stats.0.$col);
+            $all_results.combat.$col.add_to_heap($top_k, &$presult, &$relic_perm, eval_presult, $presult.calculated_stats.1.$col);
+        )*
+    };
+}
+
+macro_rules! combine_result_heaps {
+    ($combined_results:ident, $results:ident, $top_k:ident, $result:ident, [$($col:ident),*]) => {
+        $(
+            for Reverse(result) in $results.base.$col   { $combined_results.base  .$col.add_to_heap($top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
+            for Reverse(result) in $results.combat.$col { $combined_results.combat.$col.add_to_heap($top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
+        )*
+    };
 }
 
 fn calculate_cols(
@@ -317,11 +319,17 @@ fn calculate_cols(
     let mut base_boosts = Boosts::default();
 
     apply_minor_trace_effects(&params.character, &params.character_state, &mut base_boosts);
-    params.light_cone_kit.apply_base_passives(&params.enemy_config, &params.light_cone_state, &mut base_boosts);
+    // params.light_cone_kit.apply_base_passives(&params.enemy_config, &params.light_cone_state, &mut base_boosts);
+    if let Some((ref lc_kit, ref light_cone_state)) = params.light_cone {
+        lc_kit.apply_base_passives(&params.enemy_config, &light_cone_state, &mut base_boosts);
+    }
     params.character_kit.apply_base_passives(&params.enemy_config, &params.character_state, &mut base_boosts);
 
     let mut combat_boosts = Boosts::default();
-    params.light_cone_kit.apply_base_combat_passives(&params.enemy_config, &params.light_cone_state, &mut combat_boosts);
+    // params.light_cone_kit.apply_base_combat_passives(&params.enemy_config, &params.light_cone_state, &mut combat_boosts);
+    if let Some((ref lc_kit, ref light_cone_state)) = params.light_cone {
+        lc_kit.apply_base_combat_passives(&params.enemy_config, &light_cone_state, &mut combat_boosts);
+    }
     params.character_kit.apply_base_combat_passives(&params.enemy_config, &params.character_state, &mut combat_boosts);
 
     let thread_count = available_parallelism().unwrap().get();
@@ -393,7 +401,10 @@ fn calculate_cols(
                 });
 
                 let mut total_combat_boosts = base_boosts + combat_boosts;
-                params.light_cone_kit.apply_common_conditionals(&params.enemy_config, &params.light_cone_state, &mut total_combat_boosts);
+                // params.light_cone_kit.apply_common_conditionals(&params.enemy_config, &params.light_cone_state, &mut total_combat_boosts);
+                if let Some((ref lc_kit, ref light_cone_state)) = params.light_cone {
+                    lc_kit.apply_common_conditionals(&params.enemy_config, &light_cone_state, &mut total_combat_boosts);
+                }
                 params.character_kit.apply_common_conditionals(&params.enemy_config, &params.character_state, &params.character_stats, &mut total_combat_boosts);
                 active_sets.apply_common_conditionals(RelicSetKitParams {
                     enemy_config: &params.enemy_config,
@@ -408,7 +419,10 @@ fn calculate_cols(
                     let mut skill_boosts = total_combat_boosts.clone();
                     let column_type = *column_type;
 
-                    params.light_cone_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.light_cone_state, &mut skill_boosts);
+                    // params.light_cone_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.light_cone_state, &mut skill_boosts);
+                    if let Some((ref lc_kit, ref light_cone_state)) = params.light_cone {
+                        lc_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &light_cone_state, &mut skill_boosts);
+                    }
                     params.character_kit.apply_stat_type_conditionals(&params.enemy_config, column_type, &params.character_state, &params.character_stats, &mut skill_boosts);
                     active_sets.apply_stat_type_conditionals(RelicSetKitParams {
                         enemy_config: &params.enemy_config,
@@ -439,32 +453,12 @@ fn calculate_cols(
                     calculated_stats: &(params.character_stats + base_boosts, params.character_stats + total_combat_boosts)
                 };
 
-                { // TODO: This is a bit of a mess
-                    all_results.base.hp.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.hp);
-                    all_results.base.atk.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.atk);
-                    all_results.base.def.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.def);
-                    all_results.base.spd.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.spd);
-                    all_results.base.effect_res.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.effect_res);
-                    all_results.base.crit_rate.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.crit_rate);
-                    all_results.base.crit_dmg.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.crit_dmg);
-                    all_results.base.break_effect.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.break_effect);
-                    all_results.base.energy_recharge.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.energy_recharge);
-                    all_results.base.outgoing_healing_boost.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.outgoing_healing_boost);
-                    all_results.base.elemental_dmg_bonus.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.elemental_dmg_bonus);
-                    all_results.base.effect_hit_rate.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.effect_hit_rate);
-
-                    all_results.combat.hp.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.hp);
-                    all_results.combat.atk.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.atk);
-                    all_results.combat.def.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.def);
-                    all_results.combat.spd.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.spd);
-                    all_results.combat.effect_res.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.effect_res);
-                    all_results.combat.crit_rate.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.crit_rate);
-                    all_results.combat.crit_dmg.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.crit_dmg);
-                    all_results.combat.break_effect.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.break_effect);
-                    all_results.combat.energy_recharge.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.energy_recharge);
-                    all_results.combat.outgoing_healing_boost.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.outgoing_healing_boost);
-                    all_results.combat.elemental_dmg_bonus.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.elemental_dmg_bonus);
-                    all_results.combat.effect_hit_rate.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.effect_hit_rate);
+                {
+                    add_presult_to_heap!(all_results, top_k, presult, relic_perm, [
+                        hp, atk, def, spd,
+                        effect_res, crit_rate, crit_dmg, break_effect,
+                        energy_recharge, outgoing_healing_boost, elemental_dmg_bonus, effect_hit_rate
+                    ]);
 
                     for (i, col) in cols.iter().enumerate() {
                         all_results.cols[i].1.add_to_heap(top_k, &presult, &relic_perm, eval_presult, col.1);
@@ -481,32 +475,11 @@ fn calculate_cols(
     for thread in threads {
         let results = thread.join().unwrap();
 
-        // TODO: Do this some other way, or at least extract it
-        for Reverse(result) in results.base.hp { combined_results.base.hp.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.base.atk { combined_results.base.atk.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.base.def { combined_results.base.def.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.base.spd { combined_results.base.spd.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.base.effect_res { combined_results.base.effect_res.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.base.crit_rate { combined_results.base.crit_rate.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.base.crit_dmg { combined_results.base.crit_dmg.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.base.break_effect { combined_results.base.break_effect.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.base.energy_recharge { combined_results.base.energy_recharge.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.base.outgoing_healing_boost { combined_results.base.outgoing_healing_boost.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.base.elemental_dmg_bonus { combined_results.base.elemental_dmg_bonus.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.base.effect_hit_rate { combined_results.base.effect_hit_rate.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-
-        for Reverse(result) in results.combat.hp { combined_results.combat.hp.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.combat.atk { combined_results.combat.atk.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.combat.def { combined_results.combat.def.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.combat.spd { combined_results.combat.spd.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.combat.effect_res { combined_results.combat.effect_res.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.combat.crit_rate { combined_results.combat.crit_rate.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.combat.crit_dmg { combined_results.combat.crit_dmg.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.combat.break_effect { combined_results.combat.break_effect.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.combat.energy_recharge { combined_results.combat.energy_recharge.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.combat.outgoing_healing_boost { combined_results.combat.outgoing_healing_boost.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.combat.elemental_dmg_bonus { combined_results.combat.elemental_dmg_bonus.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
-        for Reverse(result) in results.combat.effect_hit_rate { combined_results.combat.effect_hit_rate.add_to_heap(top_k, &result, &result.relic_perm, clone_maker, result.comparable) }
+        combine_result_heaps!(combined_results, results, top_k, result, [
+            hp, atk, def, spd,
+            effect_res, crit_rate, crit_dmg, break_effect,
+            energy_recharge, outgoing_healing_boost, elemental_dmg_bonus, effect_hit_rate
+        ]);
 
         for (i, col) in results.cols.into_iter().enumerate() {
             if combined_results.cols.len() <= i {
@@ -530,10 +503,26 @@ fn get_description(
 
 #[tauri::command(async)]
 #[specta::specta]
-fn get_char_pic(
+fn get_char_preview(
     character: Character
 ) -> String {
     use_character(character).preview.to_owned()
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+fn get_lc_icon(
+    light_cone: LightCone
+) -> String {
+    use_light_cone(light_cone).icon.to_owned()
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+fn get_lc_preview(
+    light_cone: LightCone
+) -> String {
+    use_light_cone(light_cone).preview.to_owned()
 }
 
 pub struct Flags {
@@ -543,7 +532,7 @@ pub struct Flags {
 fn main() {
     let specta_builder = {
         let specta_builder = tauri_specta::ts::builder()
-            .commands(tauri_specta::collect_commands![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_pic]);
+            .commands(tauri_specta::collect_commands![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_preview, get_lc_icon, get_lc_preview]);
 
         #[cfg(debug_assertions)]
         let specta_builder = specta_builder.path("../src/bindings.gen.ts");
@@ -554,7 +543,7 @@ fn main() {
     tauri::Builder::default()
         .manage(Flags { running: Arc::new(RwLock::new(false)) })
         .plugin(specta_builder)
-        .invoke_handler(tauri::generate_handler![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_pic])
+        .invoke_handler(tauri::generate_handler![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_preview, get_lc_icon, get_lc_preview])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -1,4 +1,4 @@
-import { readdirSync, existsSync, readFileSync, copyFileSync } from 'fs';
+import { readdirSync, existsSync, readFileSync, copyFileSync, statSync, mkdirSync } from 'fs';
 import { join, dirname, basename } from "path";
 import { fileURLToPath } from 'url';
 
@@ -39,18 +39,36 @@ readdirSync(jsonAssetsDestination).forEach(file => {
     }
 });
 
-const characterPreviewAssets = "../StarRailRes/image/character_preview/"
-const characterPreviewAssetsDestination = "./public/hsr/image/character_preview/"
+// function syncFolder(source, destination) {
+//     // Sync all files in source to destination
+//     readdirSync(source).forEach(file => {
+//         syncFile(join(source, file), join(destination, file));
+//     });
+// }
 
-readdirSync(characterPreviewAssets).forEach(file => {
-    const name = basename(file);
-    syncFile(join(characterPreviewAssets, name), join(characterPreviewAssetsDestination, name));
-});
+function resursiveSyncFolder(source, destination) {
+    // Sync all files in source to destination
+    readdirSync(source).forEach(file => {
+        const sourcePath = join(source, file);
+        const destinationPath = join(destination, file);
 
-const lightConePreviewAssets = "../StarRailRes/image/light_cone_preview/"
-const lightConePreviewAssetsDestination = "./public/hsr/image/light_cone_preview/"
+        // Check if the file is a directory
+        if (statSync(sourcePath).isDirectory()) {
+            console.log(`Syncing folder ${destinationPath}`);
 
-readdirSync(lightConePreviewAssets).forEach(file => {
-    const name = basename(file);
-    syncFile(join(lightConePreviewAssets, name), join(lightConePreviewAssetsDestination, name));
-});
+            // Create the directory if it doesn't exist
+            if (!existsSync(destinationPath)) {
+                return // Ignore the folder
+            }
+
+            // Sync the folder
+            resursiveSyncFolder(sourcePath, destinationPath);
+        } else {
+            syncFile(sourcePath, destinationPath);
+        }
+    })
+}
+
+resursiveSyncFolder("../StarRailRes/image/character_preview/", "./public/hsr/image/character_preview/");
+resursiveSyncFolder("../StarRailRes/image/light_cone_preview/", "./public/hsr/image/light_cone_preview/");
+resursiveSyncFolder("../StarRailRes/icon/", "./public/hsr/icon/");

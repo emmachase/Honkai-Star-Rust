@@ -7,7 +7,7 @@ import { AlertCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { useData } from "@/store";
+import { useRelics } from "@/store";
 
 export const Route = createFileRoute("/import")({
     component: Import,
@@ -48,7 +48,7 @@ function Import() {
         return error.message;
     }, [error]);
 
-    const setRelics = useData(d => d.setRelics);
+    const setRelics = useRelics(d => d.setRelics);
 
     return (
         <Column>

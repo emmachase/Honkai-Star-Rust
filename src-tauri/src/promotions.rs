@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::{data_mappings::{Character, LightCone}, damage::{Level, Ascension, CharacterStats, Eidolon, Superimposition}, data::{Promotions, PromotionStepSpec, use_character_promotions, use_character, use_light_cone_promotions}};
+use crate::{damage::{Ascension, CharacterStats, Eidolon, Level, Superimposition}, data::{use_character, use_character_promotions, use_light_cone_promotions, PromotionStepSpec, Promotions}, data_mappings::{Character, LightCone}, lightcones::LightConeConfig};
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, Type)]
 pub struct CharacterSkillState {
@@ -53,7 +53,7 @@ pub fn promote<Spec>(promotions: &Promotions<Spec>, level: Level, ascension: Asc
     return spec.base + (level as f64 - 1.0) * spec.step;
 }
 
-pub fn calculate_character_base_stats(character: (Character, CharacterState), light_cone: Option<(LightCone, LightConeState)>) -> CharacterStats {
+pub fn calculate_character_base_stats(character: (Character, CharacterState), light_cone: &Option<(LightConeConfig, LightConeState)>) -> CharacterStats {
     let (character, character_state) = character;
 
     let character_promotions = use_character_promotions(character);
@@ -83,7 +83,7 @@ pub fn calculate_character_base_stats(character: (Character, CharacterState), li
     if let Some(light_cone) = light_cone {
         let (light_cone, light_cone_state) = light_cone;
 
-        let light_cone_promotions = use_light_cone_promotions(light_cone);
+        let light_cone_promotions = use_light_cone_promotions(light_cone.get_light_cone_id());
 
         stats.hp  += promote(&light_cone_promotions, light_cone_state.level, light_cone_state.ascension, |s| s.hp);
         stats.atk += promote(&light_cone_promotions, light_cone_state.level, light_cone_state.ascension, |s| s.atk);
@@ -95,6 +95,8 @@ pub fn calculate_character_base_stats(character: (Character, CharacterState), li
 
 #[cfg(test)]
 mod test {
+    use crate::lightcones::i_shall_be_my_own_sword::IShallBeMyOwnSwordConfig;
+
     use super::*;
     use assert_float_eq::*;
 
@@ -126,12 +128,15 @@ mod test {
                 stat_10: true,
             },
         });
-        let light_cone = Some((LightCone::IShallBeMyOwnSword, LightConeState {
+        let light_cone = Some((LightConeConfig::IShallBeMyOwnSword(IShallBeMyOwnSwordConfig {
+            eclipse_stacks: 3,
+            max_stack_def_pen: true,
+        }), LightConeState {
             level: 56,
             ascension: 4,
             superimposition: 1,
         }));
-        let stats = calculate_character_base_stats(character, light_cone);
+        let stats = calculate_character_base_stats(character, &light_cone);
         assert_float_relative_eq!(stats.hp,  1230.768 + 805.2);
         assert_float_relative_eq!(stats.atk, 582.12   + 402.6);
         assert_float_relative_eq!(stats.def, 415.80   + 274.5);

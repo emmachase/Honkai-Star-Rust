@@ -28,6 +28,8 @@ export function Combobox<V extends string>(
         }[];
         placeholder?: string;
         className?: string;
+        modalWidth?: number;
+        disabled?: boolean;
     } & (
         | {
               deselectable?: true;
@@ -89,6 +91,7 @@ export function Combobox<V extends string>(
                     aria-expanded={open}
                     className={cn("w-[250px] justify-between", props.className)}
                     ref={triggerRef}
+                    disabled={props.disabled}
                 >
                     <span className={cn("overflow-ellipsis overflow-hidden", isPlaceholder && "text-muted-foreground")}>
                         {content}
@@ -96,7 +99,7 @@ export function Combobox<V extends string>(
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="p-0" style={{ width: triggerWidth }}>
+            <PopoverContent className="p-0" style={{ width: props.modalWidth ?? triggerWidth }}>
                 <Command>
                     <CommandInput placeholder="Search" />
                     <CommandEmpty>No results found.</CommandEmpty>

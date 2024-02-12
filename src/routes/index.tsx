@@ -1,27 +1,35 @@
-import { Character, CharacterConfig, EffectPropertyType, IShallBeMyOwnSwordConfig, JingliuConfig, Relic, RelicSlot, ResolvedCalculatorResult, SortResultsSerde, commands } from "@/bindings.gen";
+import { Character, CharacterConfig, EffectPropertyType, IShallBeMyOwnSwordConfig, JingliuConfig, LightCone, Relic, RelicSlot, ResolvedCalculatorResult, SortResultsSerde, commands } from "@/bindings.gen";
 import { OptimizerTable } from "@/components/domain/optimizer-table";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
+import { Header } from "@/components/ui/header";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { Column, Row } from "@/components/util/flex";
 import { CharacterKitComponent, CharacterKitMap, Characters } from "@/kits/characters";
-import { JingliuKit } from "@/kits/characters/jingliu";
+import { LightCones } from "@/kits/light-cones";
 import { IShallBeMyOwnSwordKit } from "@/kits/lightcones/i-shall-be-my-own-sword";
-import { useCalcs, useData } from "@/store";
+import { useCalcs, useCharacters, useRelics, useSession } from "@/store";
 import { cn } from "@/utils";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { PropsWithChildren, Suspense, startTransition, useEffect, useMemo, useState } from "react";
+import { PropsWithChildren, Suspense, startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 
 export const Route = createFileRoute("/")({
     component: Index,
 });
 
+function CardTitle(props: PropsWithChildren<React.HTMLAttributes<HTMLElement>>) {
+    return (
+        <header className="font-bold text-xs" {...props} />
+    )
+}
+
 function Card({ children, className, ...props }: PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>) {
     return (
         <div className={cn("border p-4 rounded-md bg-card w-[260px]", className)} {...props}>
-            {children}
+            <Column>
+                {children}
+            </Column>
         </div>
     );
 }
@@ -225,54 +233,45 @@ function MainStatFilterCard(props: {
 function CharacterPreview(props: { character: Character }) {
     const src = useSuspenseQuery({
         queryKey: ["character_preview", props.character],
-        queryFn: () => commands.getCharPic(props.character),
+        queryFn: () => commands.getCharPreview(props.character),
     })
 
     return <img src={"/hsr/" + src.data} className="w-full h-[300px] object-cover"/>
 }
 
-function CharacterPreviewCard(props: { character: Character }) {
+function LightConeIcon(props: { lightCone: LightCone, className?: string }) {
+    const src = useSuspenseQuery({
+        queryKey: ["light_cone_icon", props.lightCone],
+        queryFn: () => commands.getLcIcon(props.lightCone),
+    })
+
+    return <img src={"/hsr/" + src.data} className={cn("absolute right-2 bottom-2 scale-75 origin-bottom-right", props.className)}/>
+}
+
+function CharacterPreviewCard(props: { character: Character, lightCone?: LightCone }) {
+    const character = useDeferredValue(props.character);
+    const lightCone = useDeferredValue(props.lightCone);
+
     return (
-        <Card className="p-0 bg-transparent">
-            <Suspense fallback="Loading...">
-                <CharacterPreview character={props.character}/>
+        <Card className="p-0 bg-transparent relative h-[300px]">
+            <Suspense fallback="">
+                <CharacterPreview character={character}/>
+                {lightCone && <>
+                    <LightConeIcon lightCone={lightCone} className="blur-md"/>
+                    <LightConeIcon lightCone={lightCone}/>
+                </>}
             </Suspense>
         </Card>
     )
 }
 
-const characterState = {
-    level: 80,
-    eidolon: 0,
-    ascension: 6,
-    skills: {
-        basic: 5 - 1,
-        skill: 10 - 1,
-        ult: 10 - 1,
-        talent: 10 - 1,
-    },
-    traces: {
-        ability_1: true,
-        ability_2: true,
-        ability_3: true,
-        stat_1: true,
-        stat_2: true,
-        stat_3: true,
-        stat_4: true,
-        stat_5: true,
-        stat_6: true,
-        stat_7: true,
-        stat_8: true,
-        stat_9: true,
-        stat_10: true,
-    },
-}
 
-const lcState = {
-    ascension: 6,
-    level: 80,
-    superimposition: 1 - 1,
-}
+
+// const lcState = {
+//     ascension: 6,
+//     level: 80,
+//     superimposition: 1 - 1,
+// }
 
 function CharacterKitCard<C extends Characters>(props: { character: C, onChange?: (value: CharacterConfig) => void }) {
     type Config = (typeof CharacterKitMap)[C]["defaultConfig"];
@@ -285,9 +284,12 @@ function CharacterKitCard<C extends Characters>(props: { character: C, onChange?
         }
     }, [kit]);
 
+    const characterState = useCharacters(s => s.getCharacter(props.character).state) // s.characters[props.character]?.state) ?? defaultCharacterState;
+
     return (
         <Card>
-            <Suspense fallback="Loading...">
+            <CardTitle>Character Config</CardTitle>
+            <Suspense fallback="">
                 <MyComponent
                     characterState={characterState}
                     value={kit}
@@ -298,8 +300,158 @@ function CharacterKitCard<C extends Characters>(props: { character: C, onChange?
     )
 }
 
+// 0-20  A0
+// 20-30 A1
+// 30-40 A2
+// 40-50 A3
+// 50-60 A4
+// 60-70 A5
+// 70-80 A6
+function *generateLevels() {
+    function makeValue(i: number, ascension: number) {
+        return { value: `${i};${ascension}`, label: `Level ${i}, Ascension ${ascension}` };
+    }
+
+    for (let i = 1; i <= 80; i++) {
+        const ascension = Math.max(0, Math.floor((i - 11) / 10));
+        yield makeValue(i, ascension);
+
+        if (i % 10 === 0 && i > 10 && i < 80) {
+            yield makeValue(i, ascension + 1);
+        }
+    }
+}
+
+const LevelOptions = Array.from(generateLevels()).reverse();
+
+// const AscensionOptions = new Array(7).fill(0).map((_, i) => ({ value: i.toString(), label: `A${i}` })).reverse();
+const EidolonOptions = new Array(7).fill(0).map((_, i) => ({ value: i.toString(), label: `E${i}` })).reverse();
+const SuperImpositionOptions = new Array(6).fill(0).map((_, i) => ({ value: i.toString(), label: `S${i}` })).reverse();
+
+function CharacterSelectCard() {
+    const [character, setCharacter] = useSession(s => [s.selectedCharacter, s.setSelectedCharacter]);
+    const [characterInfo, updateCharacter] = useCharacters(s => [s.getCharacter(character), s.updateCharacter]); //  s.characters[character]) ?? { state: defaultCharacterState, lightCone: undefined };
+
+    return <Card>
+        <Column className="gap-4">
+            <Column>
+                <CardTitle>Character</CardTitle>
+                <Row className="gap-2">
+                    <Combobox className="w-full min-w-0"
+                        modalWidth={300}
+                        value={character}
+                        onChange={(c) => startTransition(() => {
+                            setCharacter(c);
+                            // setKit(CharacterKitMap[c].defaultConfig)
+                        })}
+                        deselectable={false}
+                        options={[
+                            { value: Characters.Jingliu, label: "Jingliu" },
+                            // { value: Characters.Xueyi, label: "Xueyi" },
+                            { value: Characters.Sparkle, label: "Sparkle" },
+                        ]}
+                    />
+
+                    <Combobox className="flex-shrink basis-0"
+                        value={characterInfo.state.eidolon.toString()}
+                        onChange={(c) => startTransition(() => {
+                            // characterState.eidolon = +c;
+                            updateCharacter(character, (character) => {
+                                character.state.eidolon = +c;
+                            })
+                        })}
+                        deselectable={false}
+                        options={EidolonOptions}
+                    />
+                </Row>
+
+                <Combobox className="w-full"
+                    value={`${characterInfo.state.level};${characterInfo.state.ascension}`}
+                    onChange={(c) => startTransition(() => {
+                        const [level, ascension] = c.split(";");
+                        // characterState.level = +level;
+                        // characterState.ascension = +ascension;
+                        updateCharacter(character, (character) => {
+                            character.state.level = +level;
+                            character.state.ascension = +ascension;
+                        })
+                    })}
+                    deselectable={false}
+                    options={LevelOptions}
+                />
+            </Column>
+
+            <Column>
+                <CardTitle>Light Cone</CardTitle>
+                <Row className="gap-2">
+                    <Combobox className="w-full min-w-0"
+                        modalWidth={300}
+                        value={characterInfo.lightCone?.[0]}
+                        onChange={(c) => startTransition(() => {
+                            // props.setLightCone(c);
+                            updateCharacter(character, (character) => {
+                                if (c === undefined) {
+                                    character.lightCone = undefined;
+                                    return;
+                                }
+
+                                if (character.lightCone === undefined) {
+                                    character.lightCone = [c, { level: 80, ascension: 6, superimposition: 0 }];
+                                } else {
+                                    character.lightCone[0] = c;
+                                }
+                            })
+                            // setKit(CharacterKitMap[c].defaultConfig)
+                        })}
+                        deselectable={true}
+                        options={[
+                            { value: LightCones.EarthlyEscapade, label: "Earthly Escapade" },
+                            // { value: Characters.Xueyi, label: "Xueyi" },
+                            { value: LightCones.IShallBeMyOwnSword, label: "I Shall Be My Own Sword" },
+                        ]}
+                    />
+
+                    <Combobox className="flex-shrink basis-0"
+                        value={characterInfo.lightCone?.[1].superimposition.toString() ?? "0"}
+                        disabled={characterInfo.lightCone === undefined}
+                        onChange={(c) => startTransition(() => {
+                            // lcState.superimposition = +c;
+                            updateCharacter(character, (character) => {
+                                character.lightCone![1].superimposition = +c;
+                            })
+                        })}
+                        deselectable={false}
+                        options={SuperImpositionOptions}
+                    />
+                </Row>
+
+                <Combobox className="w-full"
+                    value={`${characterInfo.lightCone?.[1].level ?? 80};${characterInfo.lightCone?.[1].ascension ?? 6}`}
+                    disabled={characterInfo.lightCone === undefined}
+                    onChange={(c) => startTransition(() => {
+                        const [level, ascension] = c.split(";");
+                        // lcState.level = +level;
+                        // lcState.ascension = +ascension;
+                        updateCharacter(character, (character) => {
+                            character.lightCone![1].level = +level;
+                            character.lightCone![1].ascension = +ascension;
+                        })
+                    })}
+                    deselectable={false}
+                    options={LevelOptions}
+                />
+            </Column>
+        </Column>
+    </Card>;
+}
+
 function Index() {
-    const [character, setCharacter] = useState<Characters>(Characters.Jingliu);
+    // const [character, setCharacter] = useState<Characters>(Characters.Jingliu);
+    // const [lightCone, setLightCone] = useState<LightCones | undefined>(LightCones.IShallBeMyOwnSword);
+
+    const [character, setCharacter] = useSession(s => [s.selectedCharacter, s.setSelectedCharacter]);
+    const characterState = useCharacters(s => s.getCharacter(character)); //s.characters[character]?.state) ?? defaultCharacterState;
+    const [lightCone, lcState] = useCharacters(s => s.characters[character]?.lightCone) ?? [undefined, undefined];
 
     // const characterKitShit = CharacterKitMap[character];
     const [kit, setKit] = useState<CharacterConfig>();
@@ -311,7 +463,7 @@ function Index() {
 
     const [filters, setFilters] = useState<((r: Relic) => boolean)[]>([])
 
-    const allRelics = useData(d => d.relics);
+    const allRelics = useRelics(d => d.relics);
     const filteredRelics = useMemo(() => {
         return allRelics.filter(r => filters.every(f => f(r)));
     }, [allRelics, filters]);
@@ -332,9 +484,10 @@ function Index() {
                 filteredRelics,
                 // { Jingliu: kit },
                 kit,
-                characterState,
-                { IShallBeMyOwnSword: lcKit },
-                lcState,
+                characterState.state,
+                // { IShallBeMyOwnSword: lcKit },
+                // lcState,
+                lcState ? [{ IShallBeMyOwnSword: lcKit }, lcState] : null,
                 {
                     count: 1,
                     level: 95,
@@ -352,25 +505,14 @@ function Index() {
     return (
         <Column className="min-w-0">
             <h3>Welcome Home!</h3>
-            <Combobox
-                value={character}
-                onChange={(c) => startTransition(() => {
-                    setCharacter(c)
-                    // setKit(CharacterKitMap[c].defaultConfig)
-                })}
-                deselectable={false}
-                options={[
-                    { value: Characters.Jingliu, label: "Jingliu" },
-                    // { value: Characters.Xueyi, label: "Xueyi" },
-                    { value: Characters.Sparkle, label: "Sparkle" },
-                ]}
-            />
 
             <Row className="flex-wrap gap-2 justify-center">
                 {/* <Card className="p-0 bg-transparent">
                     <img src="/hsr/image/character_preview/1212.png" className="w-full h-[300px] object-cover"/>
                 </Card> */}
-                <CharacterPreviewCard character={character as Character} />
+                <CharacterPreviewCard character={character} lightCone={lightCone} />
+
+                <CharacterSelectCard />
 
                 {/* <Card>
                     <Suspense fallback="Loading...">
@@ -385,22 +527,24 @@ function Index() {
                 <CharacterKitCard key={character} character={character} onChange={setKit} />
 
                 <Card>
+                    <CardTitle>Light Cone Config</CardTitle>
                     <Suspense fallback="Loading...">
+                        { lightCone &&
                         <IShallBeMyOwnSwordKit
                             lightConeState={lcState}
                             value={lcKit}
                             onChange={setLcKit}
-                        />
+                        /> }
                     </Suspense>
                 </Card>
+
+                <MainStatFilterCard onChange={fs => setFilters(fs)}/>
 
                 <PermutationCard
                     allRelics={allRelics}
                     filteredRelics={filteredRelics}
                     triggerSearch={triggerSearch}
                 />
-
-                <MainStatFilterCard onChange={fs => setFilters(fs)}/>
             </Row>
 
             {/* {JSON.stringify(result)} */}

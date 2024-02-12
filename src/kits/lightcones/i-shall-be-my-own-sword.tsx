@@ -4,6 +4,11 @@ import { Column } from "@/components/util/flex";
 import { SliderWithInput } from "@/components/ui/slider";
 import { useForm } from "@/utils/form";
 
+export const IShallBeMyOwnSwordDefaultConfig: IShallBeMyOwnSwordConfig = {
+    eclipse_stacks: 3,
+    max_stack_def_pen: true,
+}
+
 export function IShallBeMyOwnSwordKit(props: {
     lightConeState: LightConeState,
     value: IShallBeMyOwnSwordConfig,
