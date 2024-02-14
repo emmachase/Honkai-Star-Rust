@@ -7,18 +7,14 @@ pub static FIRESMITH_OF_LAVA_FORGING_4P: FiresmithOfLavaForging4Piece = Firesmit
 
 impl RelicSetKit for FiresmithOfLavaForging2Piece {
     fn apply_base_passives(&self, p: RelicSetKitParams) {
-        if p.character_element == Element::Fire {
-            p.boosts.elemental_dmg_boost += 0.10;
-        }
+        p.boosts.elemental_dmg_boost[Element::Fire] += 0.10;
     }
 }
 
 impl RelicSetKit for FiresmithOfLavaForging4Piece {
     fn apply_common_conditionals(&self, p: RelicSetKitParams) {
         if p.conditionals.firesmith_of_lava_forging_4p {
-            if p.character_element == Element::Fire {
-                p.boosts.elemental_dmg_boost += 0.12;
-            }
+            p.boosts.elemental_dmg_boost[Element::Fire] += 0.12;
         }
     }
 }

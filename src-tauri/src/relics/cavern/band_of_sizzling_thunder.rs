@@ -7,9 +7,7 @@ pub static BAND_OF_SIZZLING_THUNDER_4P: BandOfSizzlingThunder4Piece = BandOfSizz
 
 impl RelicSetKit for BandOfSizzlingThunder2Piece {
     fn apply_base_passives(&self, p: RelicSetKitParams) {
-        if p.character_element == Element::Thunder {
-            p.boosts.elemental_dmg_boost += 0.10;
-        }
+        p.boosts.elemental_dmg_boost[Element::Thunder] += 0.10;
     }
 }
 

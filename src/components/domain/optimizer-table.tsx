@@ -1,4 +1,4 @@
-import { CharacterStats, ResolvedCalculatorResult, SortResultsSerde, SortResultsSerdeBase } from "@/bindings.gen"
+import { CharacterStats, ResolvedCalculatorResult, SortResultsSerde, SortResultsSerdeBase, Element } from "@/bindings.gen"
 import { CellContext, ColumnDef, SortingState, createColumnHelper, flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../ui/table"
 import { useMemo, useState } from "react"
@@ -8,6 +8,16 @@ import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 import { ArrowDown10 } from "lucide-react"
 
 // type OptimizerData = CharacterStats
+
+const ElementIndex: Record<Element, number> = {
+    Physical:  0,
+    Fire:      1,
+    Ice:       2,
+    Thunder:   3, // Lightning
+    Wind:      4,
+    Quantum:   5,
+    Imaginary: 6,
+}
 
 const helper = createColumnHelper<ResolvedCalculatorResult>()
 
@@ -62,7 +72,7 @@ export function OptimizerTable({ data: allSorts, className, ...props }: React.HT
         helper.accessor(row => row.calculated_stats[statType].break_effect,    { id: "break_effect"   , header: sum+"BE" , cell: percentCell }),
         helper.accessor(row => row.calculated_stats[statType].energy_recharge, { id: "energy_recharge", header: sum+"ERR", cell: percentCell }),
         helper.accessor(row => row.calculated_stats[statType].outgoing_healing_boost, { id: "outgoing_healing_boost", header: sum+"HEAL", cell: percentCell }),
-        helper.accessor(row => row.calculated_stats[statType].elemental_dmg_bonus,    { id: "elemental_dmg_bonus"   , header: sum+"ELEM", cell: percentCell }),
+        helper.accessor(row => row.calculated_stats[statType].elemental_dmg_boost[ElementIndex[allSorts?.effective_element ?? "Physical"]], { id: "elemental_dmg_boost", header: sum+"ELEM", cell: percentCell }),
 
         ...extraCols.map(([col, i]) => helper.accessor(row => row.cols[i][1], { id: col, header: col, cell: decimalCell })),
     ], [statType, extraCols]) // TODO: Shallow compare extraCols by spreading? maybe? if it's slow

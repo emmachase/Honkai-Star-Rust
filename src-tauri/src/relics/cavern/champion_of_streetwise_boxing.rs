@@ -7,9 +7,7 @@ pub static CHAMPION_OF_STREETWISE_BOXING_4P: ChampionOfStreetwiseBoxing4Piece = 
 
 impl RelicSetKit for ChampionOfStreetwiseBoxing2Piece {
     fn apply_base_passives(&self, p: RelicSetKitParams) {
-        if p.character_element == Element::Physical {
-            p.boosts.elemental_dmg_boost += 0.10;
-        }
+        p.boosts.elemental_dmg_boost[Element::Physical] += 0.10;
     }
 }
 

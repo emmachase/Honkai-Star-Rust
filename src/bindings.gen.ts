@@ -41,12 +41,13 @@ export type CharacterConfig = { Jingliu: JingliuConfig } | { Sparkle: SparkleCon
 export type CharacterDescriptions = { Jingliu: JingliuDescriptions } | { Sparkle: SparkleDescriptions }
 export type CharacterSkillState = { basic: number; skill: number; ult: number; talent: number }
 export type CharacterState = { level: number; ascension: number; eidolon: number; skills: CharacterSkillState; traces: CharacterTraceState }
-export type CharacterStats = { level: number; ascension: number; element: Element; hp: number; atk: number; def: number; spd: number; effect_res: number; crit_rate: number; crit_dmg: number; break_effect: number; energy_recharge: number; outgoing_healing_boost: number; elemental_dmg_bonus: number; effect_hit_rate: number }
+export type CharacterStats = { level: number; ascension: number; element: Element; hp: number; atk: number; def: number; spd: number; effect_res: number; crit_rate: number; crit_dmg: number; break_effect: number; energy_recharge: number; outgoing_healing_boost: number; elemental_dmg_boost: ElementalDmgBoost; effect_hit_rate: number }
 export type CharacterTraceState = { ability_1: boolean; ability_2: boolean; ability_3: boolean; stat_1: boolean; stat_2: boolean; stat_3: boolean; stat_4: boolean; stat_5: boolean; stat_6: boolean; stat_7: boolean; stat_8: boolean; stat_9: boolean; stat_10: boolean }
 export type EarthlyEscapadeConfig = { has_mask: boolean }
 export type EffectPropertyType = "HPDelta" | "AttackDelta" | "DefenceDelta" | "SpeedDelta" | "HPAddedRatio" | "AttackAddedRatio" | "DefenceAddedRatio" | "CriticalChanceBase" | "CriticalDamageBase" | "HealRatioBase" | "StatusProbabilityBase" | "PhysicalAddedRatio" | "FireAddedRatio" | "IceAddedRatio" | "ThunderAddedRatio" | "WindAddedRatio" | "QuantumAddedRatio" | "ImaginaryAddedRatio" | "AllDamageTypeAddedRatio" | "BreakDamageAddedRatioBase" | "SPRatioBase" | "StatusResistanceBase"
 export type EidolonUpgrade = { basic: number; skill: number; ult: number; talent: number }
 export type Element = "Physical" | "Fire" | "Ice" | "Thunder" | "Wind" | "Quantum" | "Imaginary"
+export type ElementalDmgBoost = [number, number, number, number, number, number, number]
 export type EnemyConfig = { count: number; level: number; resistance: number; elemental_weakness: boolean; weakness_broken: boolean; debuff_count: number }
 export type IShallBeMyOwnSwordConfig = { eclipse_stacks: number; max_stack_def_pen: boolean }
 /**
@@ -100,8 +101,8 @@ export type Relic = { id: string; set: RelicSet; slot: RelicSlot; level: number;
 export type RelicSet = "PasserbyOfWanderingCloud" | "MusketeerOfWildWheat" | "KnightOfPurityPalace" | "HunterOfGlacialForest" | "ChampionOfStreetwiseBoxing" | "GuardOfWutheringSnow" | "FiresmithOfLavaForging" | "GeniusOfBrilliantStars" | "BandOfSizzlingThunder" | "EagleOfTwilightLine" | "ThiefOfShootingMeteor" | "WastelanderOfBanditryDesert" | "LongevousDisciple" | "MessengerTraversingHackerspace" | "TheAshblazingGrandDuke" | "PrisonerInDeepConfinement" | "PioneerDiverOfDeadWaters" | "WatchmakerMasterOfDreamMachinations" | "SpaceSealingStation" | "FleetOfTheAgeless" | "PanCosmicCommercialEnterprise" | "BelobogOfTheArchitects" | "CelestialDifferentiator" | "InertSalsotto" | "TaliaKingdomOfBanditry" | "SprightlyVonwacq" | "RutilantArena" | "BrokenKeel" | "FirmamentFrontlineGlamoth" | "PenaconyLandOfTheDreams"
 export type RelicSlot = "Head" | "Hands" | "Chest" | "Feet" | "PlanarSphere" | "LinkRope"
 export type ResolvedCalculatorResult = { relic_perm: string[]; cols: ([string, number])[]; calculated_stats: [CharacterStats, CharacterStats] }
-export type SortResultsSerde = { base: SortResultsSerdeBase; combat: SortResultsSerdeBase; cols: ([string, ResolvedCalculatorResult[]])[] }
-export type SortResultsSerdeBase = { hp: ResolvedCalculatorResult[]; atk: ResolvedCalculatorResult[]; def: ResolvedCalculatorResult[]; spd: ResolvedCalculatorResult[]; effect_res: ResolvedCalculatorResult[]; crit_rate: ResolvedCalculatorResult[]; crit_dmg: ResolvedCalculatorResult[]; break_effect: ResolvedCalculatorResult[]; energy_recharge: ResolvedCalculatorResult[]; outgoing_healing_boost: ResolvedCalculatorResult[]; elemental_dmg_bonus: ResolvedCalculatorResult[]; effect_hit_rate: ResolvedCalculatorResult[] }
+export type SortResultsSerde = { effective_element: Element; base: SortResultsSerdeBase; combat: SortResultsSerdeBase; cols: ([string, ResolvedCalculatorResult[]])[] }
+export type SortResultsSerdeBase = { hp: ResolvedCalculatorResult[]; atk: ResolvedCalculatorResult[]; def: ResolvedCalculatorResult[]; spd: ResolvedCalculatorResult[]; effect_res: ResolvedCalculatorResult[]; crit_rate: ResolvedCalculatorResult[]; crit_dmg: ResolvedCalculatorResult[]; break_effect: ResolvedCalculatorResult[]; energy_recharge: ResolvedCalculatorResult[]; outgoing_healing_boost: ResolvedCalculatorResult[]; elemental_dmg_boost: ResolvedCalculatorResult[]; effect_hit_rate: ResolvedCalculatorResult[] }
 export type SparkleBaseConfig = { skill_cd_buff: boolean; cipher_buff: boolean; talent_dmg_stacks: number; quantum_allies: number }
 /**
  * 

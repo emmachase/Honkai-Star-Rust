@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::ops::{Add, Index, IndexMut};
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -9,6 +9,48 @@ pub type Level = u8;
 pub type Ascension = u8;
 pub type Eidolon = u8;
 pub type Superimposition = u8;
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Type, Default)]
+#[serde(transparent)]
+pub struct ElementalDmgBoost([f64; Element::COUNT]);
+
+impl Index<Element> for ElementalDmgBoost {
+    type Output = f64;
+
+    fn index(&self, index: Element) -> &Self::Output {
+        return &self.0[index as usize];
+    }
+}
+
+impl IndexMut<Element> for ElementalDmgBoost {
+    fn index_mut(&mut self, index: Element) -> &mut Self::Output {
+        return &mut self.0[index as usize];
+    }
+}
+
+impl Add for ElementalDmgBoost {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut result = self.0;
+        for i in 0..Element::COUNT {
+            result[i] += rhs.0[i];
+        }
+        return Self(result);
+    }
+}
+
+impl Add<f64> for ElementalDmgBoost {
+    type Output = Self;
+
+    fn add(self, rhs: f64) -> Self::Output {
+        let mut result = self.0;
+        for i in 0..Element::COUNT {
+            result[i] += rhs;
+        }
+        return Self(result);
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Type)]
 pub struct CharacterStats {
@@ -26,7 +68,8 @@ pub struct CharacterStats {
     pub break_effect: f64,
     pub energy_recharge: f64,
     pub outgoing_healing_boost: f64,
-    pub elemental_dmg_bonus: f64,
+    // pub elemental_dmg_bonus: f64,
+    pub elemental_dmg_boost: ElementalDmgBoost,
 
     // Boost-only, included for convenience
     pub effect_hit_rate: f64,
@@ -73,8 +116,8 @@ impl CharacterStats {
         return self.outgoing_healing_boost + boosts.outgoing_healing_boost;
     }
 
-    pub fn elemental_dmg_bonus(&self, boosts: &Boosts) -> f64 {
-        return self.elemental_dmg_bonus + boosts.elemental_dmg_boost;
+    pub fn elemental_dmg_bonus(&self, boosts: &Boosts) -> ElementalDmgBoost {
+        return self.elemental_dmg_boost + boosts.elemental_dmg_boost;
     }
 
     pub fn effect_hit_rate(&self, boosts: &Boosts) -> f64 {
@@ -117,7 +160,7 @@ pub struct Boosts {
     pub break_effect: f64,
     pub energy_recharge: f64,
     pub outgoing_healing_boost: f64,
-    pub elemental_dmg_boost: f64,
+    pub elemental_dmg_boost: ElementalDmgBoost,
 
     pub all_type_dmg_boost: f64,
     pub extra_vulnerability: f64,
@@ -182,7 +225,7 @@ impl Add<Boosts> for CharacterStats {
             break_effect: self.break_effect(&rhs),
             energy_recharge: self.energy_recharge(&rhs),
             outgoing_healing_boost: self.outgoing_healing_boost(&rhs),
-            elemental_dmg_bonus: self.elemental_dmg_bonus(&rhs) + rhs.all_type_dmg_boost, // TODO: Should we include all_type_dmg_boost here?
+            elemental_dmg_boost: self.elemental_dmg_bonus(&rhs) + rhs.all_type_dmg_boost, // TODO: Should we include all_type_dmg_boost here?
 
             effect_hit_rate: self.effect_hit_rate(&rhs),
         }
@@ -210,6 +253,7 @@ fn calculate_def_multiplier(
  * - Vulnerability Multiplier
  */
 fn calculate_common_multiplier(
+    damage_element: Element,
     character_stats: &CharacterStats,
     enemy_config: &EnemyConfig,
     boosts: &Boosts,
@@ -222,7 +266,7 @@ fn calculate_common_multiplier(
     let vulnerability_multiplier = 1.0 + boosts.extra_vulnerability;
     let damage_boost             = 1.0 + boosts.all_type_dmg_boost;
     let damage_boost = if enemy_config.elemental_weakness {
-        damage_boost + character_stats.elemental_dmg_bonus + boosts.elemental_dmg_boost
+        damage_boost + character_stats.elemental_dmg_boost[damage_element] + boosts.elemental_dmg_boost[damage_element]
     } else {
         damage_boost // No bonus damage if enemy is not weak to the element
     };
@@ -249,6 +293,7 @@ fn calculate_common_multiplier(
  * Should be called once for each type of attack (basic, skill, ult)
  */
 pub fn calc_damage_multiplier(
+    damage_element: Element,
     character_stats: &CharacterStats,
     enemy_config: &EnemyConfig,
     boosts: &Boosts,
@@ -268,7 +313,7 @@ pub fn calc_damage_multiplier(
     let boosted_crit_dmg = character_stats.crit_dmg(boosts);
     let crit_multiplier = 1.0 + boosted_crit_rate * boosted_crit_dmg;
 
-    let common_multiplier = calculate_common_multiplier(character_stats, enemy_config, boosts);
+    let common_multiplier = calculate_common_multiplier(damage_element, character_stats, enemy_config, boosts);
 
     return common_multiplier * crit_multiplier;
 }
@@ -277,14 +322,15 @@ pub fn calc_damage_multiplier(
  * Calculates the maximum damage multiplier of a normal attack (EQ: CR=1) (Not DOT)
  */
 pub fn _calc_max_damage_multiplier(
+    damage_element: Element,
     character_stats: &CharacterStats,
     enemy_config: &EnemyConfig,
     boosts: &Boosts,
 ) -> f64 {
-    let boosted_crit_dmg = (character_stats.crit_dmg  + boosts.crit_dmg ).min(1.0);
+    let boosted_crit_dmg = (character_stats.crit_dmg  + boosts.crit_dmg).min(1.0);
     let crit_multiplier = 1.0 + boosted_crit_dmg;
 
-    let common_multiplier = calculate_common_multiplier(character_stats, enemy_config, boosts);
+    let common_multiplier = calculate_common_multiplier(damage_element, character_stats, enemy_config, boosts);
 
     return common_multiplier * crit_multiplier;
 }

@@ -182,7 +182,7 @@ impl CharacterKit for Sparkle {
     }
 
     fn compute_stat_column(&self, column_type: super::StatColumnType, split: (usize, &f64), character_state: &CharacterState, character_stats: &CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64 {
-        let damage_multiplier = calc_damage_multiplier(character_stats, enemy_config, boosts);
+        let damage_multiplier = calc_damage_multiplier(character_stats.element, character_stats, enemy_config, boosts);
 
         return split.1 * match column_type {
             StatColumnType::BasicDamage => {

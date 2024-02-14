@@ -185,7 +185,7 @@ impl CharacterKit for Jingliu {
     }
 
     fn compute_stat_column(&self, column_type: StatColumnType, (_, split): (usize, &f64), character_state: &CharacterState, character_stats: &CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64 {
-        let damage_multiplier = calc_damage_multiplier(character_stats, enemy_config, boosts);
+        let damage_multiplier = calc_damage_multiplier(character_stats.element, character_stats, enemy_config, boosts);
 
         return split * match column_type {
             StatColumnType::BasicDamage => {

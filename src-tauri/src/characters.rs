@@ -53,14 +53,14 @@ impl CharacterTraceIds {
     }
 }
 
-fn apply_std_trace_effect(effective_element: Element, trace_id: &str, boosts: &mut Boosts) {
+fn apply_std_trace_effect(trace_id: &str, boosts: &mut Boosts) {
     let trace = use_character_trace_node(trace_id);
     for effect in &trace.levels[0].properties {
-        apply_effect_boost(effective_element, effect.property_type, effect.value, boosts);
+        apply_effect_boost(effect.property_type, effect.value, boosts);
     }
 }
 
-pub fn apply_effect_boost(effective_element: Element, effect: EffectPropertyType, value: f64, boosts: &mut Boosts) {
+pub fn apply_effect_boost(effect: EffectPropertyType, value: f64, boosts: &mut Boosts) {
     match effect {
         EffectPropertyType::HPDelta                   => boosts.hp_flat += value,
         EffectPropertyType::AttackDelta               => boosts.atk_flat += value,
@@ -78,13 +78,13 @@ pub fn apply_effect_boost(effective_element: Element, effect: EffectPropertyType
         EffectPropertyType::StatusResistanceBase      => boosts.effect_res += value,
 
         EffectPropertyType::AllDamageTypeAddedRatio   => boosts.all_type_dmg_boost += value,
-        EffectPropertyType::PhysicalAddedRatio        => if effective_element == Element::Physical  { boosts.elemental_dmg_boost += value },
-        EffectPropertyType::FireAddedRatio            => if effective_element == Element::Fire      { boosts.elemental_dmg_boost += value },
-        EffectPropertyType::IceAddedRatio             => if effective_element == Element::Ice       { boosts.elemental_dmg_boost += value },
-        EffectPropertyType::ThunderAddedRatio         => if effective_element == Element::Thunder   { boosts.elemental_dmg_boost += value },
-        EffectPropertyType::WindAddedRatio            => if effective_element == Element::Wind      { boosts.elemental_dmg_boost += value },
-        EffectPropertyType::QuantumAddedRatio         => if effective_element == Element::Quantum   { boosts.elemental_dmg_boost += value },
-        EffectPropertyType::ImaginaryAddedRatio       => if effective_element == Element::Imaginary { boosts.elemental_dmg_boost += value },
+        EffectPropertyType::PhysicalAddedRatio        => boosts.elemental_dmg_boost[Element::Physical]  += value,
+        EffectPropertyType::FireAddedRatio            => boosts.elemental_dmg_boost[Element::Fire]      += value,
+        EffectPropertyType::IceAddedRatio             => boosts.elemental_dmg_boost[Element::Ice]       += value,
+        EffectPropertyType::ThunderAddedRatio         => boosts.elemental_dmg_boost[Element::Thunder]   += value,
+        EffectPropertyType::WindAddedRatio            => boosts.elemental_dmg_boost[Element::Wind]      += value,
+        EffectPropertyType::QuantumAddedRatio         => boosts.elemental_dmg_boost[Element::Quantum]   += value,
+        EffectPropertyType::ImaginaryAddedRatio       => boosts.elemental_dmg_boost[Element::Imaginary] += value,
     }
 }
 
@@ -94,17 +94,16 @@ pub fn apply_minor_trace_effects(character: &CharacterDescriptor, character_stat
     // Major traces are applied in the character kit, since they are character-specific
     // But minor traces can be done automatically
 
-    let el = character.element;
-    if character_state.traces.stat_1  { apply_std_trace_effect(el, &trace_ids.stat_1,  boosts); }
-    if character_state.traces.stat_2  { apply_std_trace_effect(el, &trace_ids.stat_2,  boosts); }
-    if character_state.traces.stat_3  { apply_std_trace_effect(el, &trace_ids.stat_3,  boosts); }
-    if character_state.traces.stat_4  { apply_std_trace_effect(el, &trace_ids.stat_4,  boosts); }
-    if character_state.traces.stat_5  { apply_std_trace_effect(el, &trace_ids.stat_5,  boosts); }
-    if character_state.traces.stat_6  { apply_std_trace_effect(el, &trace_ids.stat_6,  boosts); }
-    if character_state.traces.stat_7  { apply_std_trace_effect(el, &trace_ids.stat_7,  boosts); }
-    if character_state.traces.stat_8  { apply_std_trace_effect(el, &trace_ids.stat_8,  boosts); }
-    if character_state.traces.stat_9  { apply_std_trace_effect(el, &trace_ids.stat_9,  boosts); }
-    if character_state.traces.stat_10 { apply_std_trace_effect(el, &trace_ids.stat_10, boosts); }
+    if character_state.traces.stat_1  { apply_std_trace_effect(&trace_ids.stat_1,  boosts); }
+    if character_state.traces.stat_2  { apply_std_trace_effect(&trace_ids.stat_2,  boosts); }
+    if character_state.traces.stat_3  { apply_std_trace_effect(&trace_ids.stat_3,  boosts); }
+    if character_state.traces.stat_4  { apply_std_trace_effect(&trace_ids.stat_4,  boosts); }
+    if character_state.traces.stat_5  { apply_std_trace_effect(&trace_ids.stat_5,  boosts); }
+    if character_state.traces.stat_6  { apply_std_trace_effect(&trace_ids.stat_6,  boosts); }
+    if character_state.traces.stat_7  { apply_std_trace_effect(&trace_ids.stat_7,  boosts); }
+    if character_state.traces.stat_8  { apply_std_trace_effect(&trace_ids.stat_8,  boosts); }
+    if character_state.traces.stat_9  { apply_std_trace_effect(&trace_ids.stat_9,  boosts); }
+    if character_state.traces.stat_10 { apply_std_trace_effect(&trace_ids.stat_10, boosts); }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

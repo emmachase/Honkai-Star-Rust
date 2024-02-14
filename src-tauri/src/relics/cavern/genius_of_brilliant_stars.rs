@@ -7,9 +7,7 @@ pub static GENIUS_OF_BRILLIANT_STARS_4P: GeniusOfBrilliantStars4Piece = GeniusOf
 
 impl RelicSetKit for GeniusOfBrilliantStars2Piece {
     fn apply_base_passives(&self, p: RelicSetKitParams) {
-        if p.character_element == Element::Quantum {
-            p.boosts.elemental_dmg_boost += 0.10;
-        }
+        p.boosts.elemental_dmg_boost[Element::Quantum] += 0.10;
     }
 }
 

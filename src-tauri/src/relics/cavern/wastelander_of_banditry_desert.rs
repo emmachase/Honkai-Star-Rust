@@ -7,9 +7,7 @@ pub static WASTELANDER_OF_BANDITRY_DESERT_4P: WastelanderOfBanditryDesert4Piece 
 
 impl RelicSetKit for WastelanderOfBanditryDesert2Piece {
     fn apply_base_passives(&self, p: RelicSetKitParams) {
-        if p.character_element == Element::Imaginary {
-            p.boosts.elemental_dmg_boost += 0.10;
-        }
+        p.boosts.elemental_dmg_boost[Element::Imaginary] += 0.10;
     }
 }
 

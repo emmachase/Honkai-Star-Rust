@@ -89,7 +89,7 @@ impl Relic {
 
     pub fn apply(&self, effective_element: Element, boosts: &mut Boosts) {
         for (effect, value) in self.iter() {
-            apply_effect_boost(effective_element, effect, value, boosts);
+            apply_effect_boost(effect, value, boosts);
         }
     }
 }

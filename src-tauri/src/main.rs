@@ -10,7 +10,7 @@ use std::{thread, sync::Arc};
 
 use characters::{CharacterConfig, CharacterDescriptions, CharacterKit, StatColumnDesc, StatColumnType};
 use damage::CharacterStats;
-use data::{use_character_rank, use_light_cone, CharacterDescriptor, EffectPropertyType, RelicSlot};
+use data::{use_character_rank, use_light_cone, CharacterDescriptor, EffectPropertyType, Element, RelicSlot};
 use data_mappings::{Character, LightCone, RelicSet};
 use lightcones::LightConeConfig;
 use relics::{Relic, RelicSetKit, ConditionalRelicSetEffects, RelicSetKitParams};
@@ -88,7 +88,7 @@ fn prank_him_john(
 
     println!("Checked {} perms in {}s", relics_by_slot.permutations().size(), duration.as_secs_f64());
 
-    SortResultsSerde::from((cols, &relics_by_slot))
+    SortResultsSerde::from((character_stats.element, cols, &relics_by_slot))
 }
 
 #[tauri::command(async)]
@@ -179,7 +179,7 @@ struct SortResultsBase {
     pub break_effect: BinaryHeap<Reverse<CalculatorResult>>,
     pub energy_recharge: BinaryHeap<Reverse<CalculatorResult>>,
     pub outgoing_healing_boost: BinaryHeap<Reverse<CalculatorResult>>,
-    pub elemental_dmg_bonus: BinaryHeap<Reverse<CalculatorResult>>,
+    pub elemental_dmg_boost: BinaryHeap<Reverse<CalculatorResult>>,
     pub effect_hit_rate: BinaryHeap<Reverse<CalculatorResult>>,
 }
 
@@ -244,12 +244,14 @@ pub struct SortResultsSerdeBase {
     pub break_effect: Vec<ResolvedCalculatorResult>,
     pub energy_recharge: Vec<ResolvedCalculatorResult>,
     pub outgoing_healing_boost: Vec<ResolvedCalculatorResult>,
-    pub elemental_dmg_bonus: Vec<ResolvedCalculatorResult>,
+    pub elemental_dmg_boost: Vec<ResolvedCalculatorResult>,
     pub effect_hit_rate: Vec<ResolvedCalculatorResult>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Type)]
 pub struct SortResultsSerde {
+    pub effective_element: Element,
+
     pub base: SortResultsSerdeBase,
     pub combat: SortResultsSerdeBase,
 
@@ -266,11 +268,13 @@ macro_rules! from_heap {
     };
 }
 
-impl From<(SortResults, &Vec<Vec<Relic>>)> for SortResultsSerde {
-    fn from((sort, relics_by_slot): (SortResults, &Vec<Vec<Relic>>)) -> Self {
+impl From<(Element, SortResults, &Vec<Vec<Relic>>)> for SortResultsSerde {
+    fn from((element, sort, relics_by_slot): (Element, SortResults, &Vec<Vec<Relic>>)) -> Self {
         Self {
-            base:   from_heap!(sort.base,   relics_by_slot, [hp, atk, def, spd, effect_res, crit_rate, crit_dmg, break_effect, energy_recharge, outgoing_healing_boost, elemental_dmg_bonus, effect_hit_rate]),
-            combat: from_heap!(sort.combat, relics_by_slot, [hp, atk, def, spd, effect_res, crit_rate, crit_dmg, break_effect, energy_recharge, outgoing_healing_boost, elemental_dmg_bonus, effect_hit_rate]),
+            effective_element: element,
+
+            base:   from_heap!(sort.base,   relics_by_slot, [hp, atk, def, spd, effect_res, crit_rate, crit_dmg, break_effect, energy_recharge, outgoing_healing_boost, elemental_dmg_boost, effect_hit_rate]),
+            combat: from_heap!(sort.combat, relics_by_slot, [hp, atk, def, spd, effect_res, crit_rate, crit_dmg, break_effect, energy_recharge, outgoing_healing_boost, elemental_dmg_boost, effect_hit_rate]),
 
             cols: sort.cols.into_iter().map(|(column_type, heap)| {
                 (column_type.to_name().to_owned(), heap.into_sorted_vec().into_iter().map(|Reverse(result)| { ResolvedCalculatorResult::from((result, relics_by_slot)) }).collect())
@@ -459,8 +463,12 @@ fn calculate_cols(
                     add_presult_to_heap!(all_results, top_k, presult, relic_perm, [
                         hp, atk, def, spd,
                         effect_res, crit_rate, crit_dmg, break_effect,
-                        energy_recharge, outgoing_healing_boost, elemental_dmg_bonus, effect_hit_rate
+                        energy_recharge, outgoing_healing_boost, effect_hit_rate
                     ]);
+
+                    // Elemental Damage Boost is a special case
+                    all_results.base  .elemental_dmg_boost.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.0.elemental_dmg_boost[params.character_stats.element]);
+                    all_results.combat.elemental_dmg_boost.add_to_heap(top_k, &presult, &relic_perm, eval_presult, presult.calculated_stats.1.elemental_dmg_boost[params.character_stats.element]);
 
                     for (i, col) in cols.iter().enumerate() {
                         all_results.cols[i].1.add_to_heap(top_k, &presult, &relic_perm, eval_presult, col.1);
@@ -480,7 +488,7 @@ fn calculate_cols(
         combine_result_heaps!(combined_results, results, top_k, result, [
             hp, atk, def, spd,
             effect_res, crit_rate, crit_dmg, break_effect,
-            energy_recharge, outgoing_healing_boost, elemental_dmg_bonus, effect_hit_rate
+            energy_recharge, outgoing_healing_boost, elemental_dmg_boost, effect_hit_rate
         ]);
 
         for (i, col) in results.cols.into_iter().enumerate() {

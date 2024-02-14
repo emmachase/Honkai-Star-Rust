@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::{damage::{Ascension, CharacterStats, Eidolon, Level, Superimposition}, data::{use_character, use_character_promotions, use_light_cone_promotions, PromotionStepSpec, Promotions}, data_mappings::{Character, LightCone}, lightcones::LightConeConfig};
+use crate::{damage::{Ascension, CharacterStats, Eidolon, ElementalDmgBoost, Level, Superimposition}, data::{use_character, use_character_promotions, use_light_cone_promotions, PromotionStepSpec, Promotions}, data_mappings::{Character, LightCone}, lightcones::LightConeConfig};
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, Type)]
 pub struct CharacterSkillState {
@@ -75,7 +75,7 @@ pub fn calculate_character_base_stats(character: (Character, CharacterState), li
         effect_res: 0.0,
         energy_recharge: 0.0,
         outgoing_healing_boost: 0.0,
-        elemental_dmg_bonus: 0.0,
+        elemental_dmg_boost: ElementalDmgBoost::default(),
 
         effect_hit_rate: 0.0,
     };

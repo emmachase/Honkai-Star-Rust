@@ -7,9 +7,7 @@ pub static HUNTER_OF_GLACIAL_FOREST_4P: HunterOfGlacialForest4Piece = HunterOfGl
 
 impl RelicSetKit for HunterOfGlacialForest2Piece {
     fn apply_base_passives(&self, p: RelicSetKitParams) {
-        if p.character_element == Element::Ice {
-            p.boosts.elemental_dmg_boost += 0.10;
-        }
+        p.boosts.elemental_dmg_boost[Element::Ice] += 0.10;
     }
 }
 

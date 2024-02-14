@@ -73,6 +73,10 @@ pub enum Element {
     Imaginary,
 }
 
+impl Element {
+    pub const COUNT: usize = 7;
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone, Copy)]
 pub enum CharacterInternalPath {
     Knight,  // Preservation

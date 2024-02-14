@@ -5,8 +5,6 @@ pub static EAGLE_OF_TWILIGHT_LINE_2P: EagleOfTwilightLine2Piece = EagleOfTwiligh
 
 impl RelicSetKit for EagleOfTwilightLine2Piece {
     fn apply_base_passives(&self, p: RelicSetKitParams) {
-        if p.character_element == Element::Wind {
-            p.boosts.elemental_dmg_boost += 0.10;
-        }
+        p.boosts.elemental_dmg_boost[Element::Wind] += 0.10;
     }
 }
