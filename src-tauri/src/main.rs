@@ -10,7 +10,7 @@ use std::{thread, sync::Arc};
 
 use characters::{CharacterConfig, CharacterDescriptions, CharacterKit, StatColumnDesc, StatColumnType};
 use damage::CharacterStats;
-use data::{use_light_cone, CharacterDescriptor, EffectPropertyType, RelicSlot};
+use data::{use_character_rank, use_light_cone, CharacterDescriptor, EffectPropertyType, RelicSlot};
 use data_mappings::{Character, LightCone, RelicSet};
 use lightcones::LightConeConfig;
 use relics::{Relic, RelicSetKit, ConditionalRelicSetEffects, RelicSetKitParams};
@@ -323,14 +323,16 @@ fn calculate_cols(
     if let Some((ref lc_kit, ref light_cone_state)) = params.light_cone {
         lc_kit.apply_base_passives(&params.enemy_config, &light_cone_state, &mut base_boosts);
     }
-    params.character_kit.apply_base_passives(&params.enemy_config, &params.character_state, &mut base_boosts);
+    params.character_kit.apply_base_effects(&params.enemy_config, &params.character_state, &mut base_boosts);
 
     let mut combat_boosts = Boosts::default();
     // params.light_cone_kit.apply_base_combat_passives(&params.enemy_config, &params.light_cone_state, &mut combat_boosts);
     if let Some((ref lc_kit, ref light_cone_state)) = params.light_cone {
         lc_kit.apply_base_combat_passives(&params.enemy_config, &light_cone_state, &mut combat_boosts);
     }
-    params.character_kit.apply_base_combat_passives(&params.enemy_config, &params.character_state, &mut combat_boosts);
+    params.character_kit.apply_base_combat_effects(&params.enemy_config, &params.character_state, &mut combat_boosts);
+
+    params.character_kit.apply_shared_combat_effects(&params.enemy_config, &params.character_state, &mut combat_boosts);
 
     let thread_count = available_parallelism().unwrap().get();
     let batches = relics.permutation_batches(thread_count);
@@ -405,7 +407,7 @@ fn calculate_cols(
                 if let Some((ref lc_kit, ref light_cone_state)) = params.light_cone {
                     lc_kit.apply_common_conditionals(&params.enemy_config, &light_cone_state, &mut total_combat_boosts);
                 }
-                params.character_kit.apply_common_conditionals(&params.enemy_config, &params.character_state, &params.character_stats, &mut total_combat_boosts);
+                params.character_kit.apply_general_conditionals(&params.enemy_config, &params.character_state, &params.character_stats, &mut total_combat_boosts);
                 active_sets.apply_common_conditionals(RelicSetKitParams {
                     enemy_config: &params.enemy_config,
                     conditionals: &params.relic_conditionals,
@@ -525,6 +527,37 @@ fn get_lc_preview(
     use_light_cone(light_cone).preview.to_owned()
 }
 
+#[derive(Debug, Clone, Type, Serialize, Deserialize, Default)]
+pub struct EidolonUpgrade {
+    pub basic: u8,
+    pub skill: u8,
+    pub ult: u8,
+    pub talent: u8,
+}
+
+#[tauri::command(async)]
+#[specta::specta]
+fn get_eidolon_upgrades(
+    character: Character
+) -> Vec<EidolonUpgrade> {
+    use_character(character).ranks.iter().map(|r| {
+        let rank = use_character_rank(r);
+        let mut upgrades = EidolonUpgrade::default();
+
+        for upgrade in rank.level_up_skills.iter() {
+            match upgrade.id.chars().last().unwrap() {
+                '1' => upgrades.basic += upgrade.num,
+                '2' => upgrades.skill += upgrade.num,
+                '3' => upgrades.ult += upgrade.num,
+                '4' => upgrades.talent += upgrade.num,
+                _ => {}
+            }
+        }
+
+        upgrades
+    }).collect()
+}
+
 pub struct Flags {
     pub running: Arc<RwLock<bool>>
 }
@@ -532,7 +565,7 @@ pub struct Flags {
 fn main() {
     let specta_builder = {
         let specta_builder = tauri_specta::ts::builder()
-            .commands(tauri_specta::collect_commands![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_preview, get_lc_icon, get_lc_preview]);
+            .commands(tauri_specta::collect_commands![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_preview, get_lc_icon, get_lc_preview, get_eidolon_upgrades]);
 
         #[cfg(debug_assertions)]
         let specta_builder = specta_builder.path("../src/bindings.gen.ts");
@@ -543,7 +576,7 @@ fn main() {
     tauri::Builder::default()
         .manage(Flags { running: Arc::new(RwLock::new(false)) })
         .plugin(specta_builder)
-        .invoke_handler(tauri::generate_handler![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_preview, get_lc_icon, get_lc_preview])
+        .invoke_handler(tauri::generate_handler![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_preview, get_lc_icon, get_lc_preview, get_eidolon_upgrades])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

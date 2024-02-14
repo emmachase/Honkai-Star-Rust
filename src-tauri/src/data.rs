@@ -10,6 +10,7 @@ use crate::data_mappings::{Character, LightCone, RelicSet};
 const CHARACTER_PROMOTIONS_JSON : &str = include_str!("./data/character_promotions.json");
 const CHARACTER_SKILL_TREES_JSON: &str = include_str!("./data/character_skill_trees.json");
 const CHARACTER_SKILLS_JSON     : &str = include_str!("./data/character_skills.json");
+const CHARACTER_RANKS_JSON      : &str = include_str!("./data/character_ranks.json");
 const CHARACTERS_JSON           : &str = include_str!("./data/characters.json");
 const LIGHT_CONE_PROMOTIONS_JSON: &str = include_str!("./data/light_cone_promotions.json");
 const LIGHT_CONE_RANKS_JSON     : &str = include_str!("./data/light_cone_ranks.json");
@@ -286,10 +287,28 @@ impl LightConeEffectsDescriptor {
     }
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CharacterRankSkillUpgrade {
+    pub id: String,
+    pub num: u8,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CharacterRankDescriptor {
+    pub id: String,
+    pub name: String,
+    pub rank: u8,
+    pub desc: String,
+    // pub materials: Vec<IdNameDescriptor>,
+    pub level_up_skills: Vec<CharacterRankSkillUpgrade>,
+    pub icon: String,
+}
+
 lazy_static! {
     pub static ref CHARACTER_PROMOTIONS: HashMap<String, Promotions<CharacterPromotionSpec>> = serde_json::from_str(&CHARACTER_PROMOTIONS_JSON).unwrap();
     pub static ref CHARACTER_SKILL_TREES: HashMap<String, CharacterTraceNode> = serde_json::from_str(&CHARACTER_SKILL_TREES_JSON).unwrap();
     pub static ref CHARACTER_SKILLS: HashMap<String, CharacterSkillDescriptor> = serde_json::from_str(&CHARACTER_SKILLS_JSON).unwrap();
+    pub static ref CHARACTER_RANKS: HashMap<String, CharacterRankDescriptor> = serde_json::from_str(&CHARACTER_RANKS_JSON).unwrap();
     pub static ref CHARACTERS: HashMap<String, CharacterDescriptor> = serde_json::from_str(&CHARACTERS_JSON).unwrap();
     pub static ref LIGHT_CONE_PROMOTIONS: HashMap<String, Promotions<LightConePromotionSpec>> = serde_json::from_str(&LIGHT_CONE_PROMOTIONS_JSON).unwrap();
     pub static ref LIGHT_CONE_RANKS: HashMap<String, LightConeEffectsDescriptor> = serde_json::from_str(&LIGHT_CONE_RANKS_JSON).unwrap();
@@ -309,6 +328,10 @@ pub fn use_character_trace_node(trace_id: &str) -> &'static CharacterTraceNode {
 
 pub fn use_character_skill(skill_id: &str) -> &'static CharacterSkillDescriptor {
     return &CHARACTER_SKILLS[skill_id];
+}
+
+pub fn use_character_rank(rank_id: &str) -> &'static CharacterRankDescriptor {
+    return &CHARACTER_RANKS[rank_id];
 }
 
 pub fn use_character(character: Character) -> &'static CharacterDescriptor {

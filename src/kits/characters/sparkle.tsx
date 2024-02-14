@@ -1,10 +1,10 @@
-import { CharacterState, SparkleConfig } from "@/bindings.gen";
+import { CharacterState, SparkleBaseConfig } from "@/bindings.gen";
 import { LabeledSwitch } from "@/components/ui/switch";
 import { Column } from "@/components/util/flex";
 import { SliderWithInput } from "@/components/ui/slider";
 import { useForm } from "@/utils/form";
 
-export const SparkleDefaultConfig: SparkleConfig = {
+export const SparkleDefaultConfig: SparkleBaseConfig = {
     skill_cd_buff: true,
     cipher_buff: true,
     talent_dmg_stacks: 3,
@@ -13,13 +13,13 @@ export const SparkleDefaultConfig: SparkleConfig = {
 
 export function SparkleKit(props: {
     characterState: CharacterState,
-    value: SparkleConfig,
-    onChange: (value: SparkleConfig) => void
+    value: SparkleBaseConfig,
+    onChange: (value: SparkleBaseConfig) => void
 }) {
     const {
         register,
         registerSwitch,
-    } = useForm<SparkleConfig>(props.value, props.onChange);
+    } = useForm<SparkleBaseConfig>(props.value, props.onChange);
 
     return <Column>
         <LabeledSwitch {...registerSwitch("skill_cd_buff")}

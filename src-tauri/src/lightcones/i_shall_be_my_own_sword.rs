@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_tuple::Deserialize_tuple;
 use specta::Type;
 
-use crate::{promotions::LightConeState, damage::{Boosts, EnemyConfig}, characters::StatColumnType, data::use_light_cone_effects, data_mappings::LightCone, util::deserialize::deserialize_u8};
+use crate::{promotions::LightConeState, damage::{Boosts, EnemyConfig}, data::use_light_cone_effects, data_mappings::LightCone, util::deserialize::deserialize_u8};
 
 use super::LightConeKit;
 
@@ -62,13 +62,5 @@ impl LightConeKit for IShallBeMyOwnSword {
         if self.config.max_stack_def_pen {
             boosts.def_shred += desc.def_pen_pct;
         }
-    }
-
-    fn apply_common_conditionals(&self, _enemy_config: &EnemyConfig, _light_cone_state: &LightConeState, _boosts: &mut Boosts) {
-        // No conditional passives
-    }
-
-    fn apply_stat_type_conditionals(&self, _enemy_config: &EnemyConfig, _stat_type: StatColumnType, _light_cone_state: &LightConeState, _boosts: &mut Boosts) {
-        // No stat passives
     }
 }

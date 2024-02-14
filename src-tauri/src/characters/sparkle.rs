@@ -1,17 +1,23 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_tuple::Deserialize_tuple;
 use specta::Type;
 
-use crate::{col, damage::{calc_damage_multiplier, Boosts, CharacterStats, EnemyConfig}, data::{use_character, use_character_skill}, data_mappings::Character, promotions::CharacterState, util::deserialize::deserialize_u8};
+use crate::{col, damage::{calc_damage_multiplier, Boosts, CharacterStats, EnemyConfig}, data::{use_character, use_character_skill}, data_mappings::Character, promotions::CharacterState, shared_configs, util::deserialize::deserialize_u8, wrong_config};
 
 use super::{CharacterKit, StatColumnDesc, StatColumnType};
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, Type)]
-pub struct SparkleConfig {
-    pub skill_cd_buff: bool,
-    pub cipher_buff: bool,
-    pub talent_dmg_stacks: u8,
-    pub quantum_allies: u8,
+shared_configs! {
+    prefix Sparkle;
+
+    Base { }
+    Teammate { cd_stat: f64 }
+
+    Shared {
+        skill_cd_buff: bool,
+        cipher_buff: bool,
+        talent_dmg_stacks: u8,
+        quantum_allies: u8
+    }
 }
 
 pub struct Sparkle {
@@ -108,50 +114,65 @@ impl SparkleDescriptions {
     }
 }
 
+impl Sparkle {
+    fn apply_skill(&self, character_state: &CharacterState, config: SparkleConfig, boosts: &mut Boosts, crit_dmg: f64) {
+        let config = SparkleSharedConfig::from(config);
+
+        let skill = self.descriptions.skill[character_state.skills.skill as usize];
+
+        // Skill CD Buff
+        if config.skill_cd_buff {
+            let mut pct = skill.crit_dmg_pct;
+            if character_state.eidolon >= 6 {
+                pct += 0.3;
+            }
+
+            boosts.crit_dmg += crit_dmg * pct + skill.crit_dmg_flat;
+        }
+    }
+}
+
 impl CharacterKit for Sparkle {
-    fn apply_base_combat_passives(&self, _enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts) {
-        let talent = self.descriptions.talent[character_state.skills.talent as usize];
-        let ultimate = self.descriptions.ultimate[character_state.skills.ult as usize];
+    fn apply_shared_combat_effects(&self, _enemy_config: &EnemyConfig, own_character_state: &CharacterState, boosts: &mut Boosts) {
+        let config = SparkleSharedConfig::from(self.config);
+
+        let talent = self.descriptions.talent[own_character_state.skills.talent as usize];
+        let ultimate = self.descriptions.ultimate[own_character_state.skills.ult as usize];
 
         // Talent
         let mut dmg_boost_per_stack = talent.dmg_boost_pct;
-        if self.config.cipher_buff {
+        if config.cipher_buff {
             dmg_boost_per_stack += ultimate.dmg_boost_pct;
         }
 
-        boosts.all_type_dmg_boost += dmg_boost_per_stack * self.config.talent_dmg_stacks as f64;
-        if character_state.eidolon >= 2 {
-            boosts.def_shred += 0.08 * self.config.talent_dmg_stacks as f64;
+        boosts.all_type_dmg_boost += dmg_boost_per_stack * config.talent_dmg_stacks as f64;
+        if own_character_state.eidolon >= 2 {
+            boosts.def_shred += 0.08 * config.talent_dmg_stacks as f64;
         }
 
         // "Nocturne" A6
-        if character_state.traces.ability_3 {
+        if own_character_state.traces.ability_3 {
             boosts.atk_pct += 0.15;
-            boosts.atk_pct += match self.config.quantum_allies {
+            boosts.atk_pct += match config.quantum_allies {
                 1 => 0.5,
                 2 => 0.15,
                 3 => 0.30,
                 _ => 0.0,
             };
 
-            if character_state.eidolon >= 1 {
+            if own_character_state.eidolon >= 1 {
                 boosts.atk_pct += 0.40;
             }
         }
     }
 
-    fn apply_common_conditionals(&self, _enemy_config: &EnemyConfig, character_state: &CharacterState, character_stats: &CharacterStats, boosts: &mut Boosts) {
-        let skill = self.descriptions.skill[character_state.skills.skill as usize];
+    fn apply_teammate_combat_effects(&self, _enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts) {
+        let SparkleConfig::Teammate(config) = self.config else { wrong_config!(SparkleTeammateConfig) };
+        self.apply_skill(character_state, self.config, boosts, config.cd_stat);
+    }
 
-        // Skill CD Buff
-        if self.config.skill_cd_buff {
-            let mut pct = skill.crit_dmg_pct;
-            if character_state.eidolon >= 6 {
-                pct += 0.3;
-            }
-
-            boosts.crit_dmg += character_stats.crit_dmg(boosts) * pct + skill.crit_dmg_flat;
-        }
+    fn apply_general_conditionals(&self, _enemy_config: &EnemyConfig, character_state: &CharacterState, character_stats: &CharacterStats, boosts: &mut Boosts) {
+        self.apply_skill(character_state, self.config, boosts, character_stats.crit_dmg(boosts));
     }
 
     fn get_stat_columns(&self, _enemy_config: &EnemyConfig) -> Vec<StatColumnDesc> {

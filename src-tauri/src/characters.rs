@@ -157,20 +157,34 @@ pub trait CharacterKit {
      * This function is called once outside of the permutation loop.
      * It should apply character passive effects that affect the character's base stats. (i.e. it shows up in the character's stat sheet)
      */
-    fn apply_base_passives(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {}
+    fn apply_base_effects(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {}
 
     /**
      * This function is called once outside of the permutation loop.
-     * It should apply character passive effects that affect the character's combat stats. (i.e. it only shows up during combat)
+     * It should apply character passive effects that affect the only this character's combat stats. (i.e. it only shows up during combat)
+     * If the effect affects the character's teammates, it should be applied in [`CharacterKit::apply_shared_combat_passives()`] instead.
      */
-    fn apply_base_combat_passives(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {}
+    fn apply_base_combat_effects(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {}
+
+    /**
+     * This function is called once outside of the permutation loop.
+     * It should apply character passive effects that affect the this character's and teammates' combat stats. (i.e. it only shows up during combat)
+     */
+    fn apply_shared_combat_effects(&self, _enemy_config: &EnemyConfig, _own_character_state: &CharacterState, _boosts: &mut Boosts) {}
+
+    /**
+     * This function is called once outside of the permutation loop.
+     * It should apply character effects that affect the this character's teammates' combat stats.
+     * Apply effects here if the effect does not apply to the character itself, or the effect on teammates' is conditional on the character's stats (code duplication sad face).
+     */
+    fn apply_teammate_combat_effects(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _boosts: &mut Boosts) {}
 
     /**
      * This function is called once for each relic permutation.
      * It should apply character effects that are conditional based on relic stats (e.g. +10% DMG when SPD > 160)
      * If the effect does not depend on relic stats, it should be applied in [`CharacterKit::apply_base_combat_passives()`] instead.
      */
-    fn apply_common_conditionals(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _character_stats: &CharacterStats, _boosts: &mut Boosts) {}
+    fn apply_general_conditionals(&self, _enemy_config: &EnemyConfig, _character_state: &CharacterState, _character_stats: &CharacterStats, _boosts: &mut Boosts) {}
 
     /**
      * This function is called multiple times for each relic permutation.
@@ -181,6 +195,77 @@ pub trait CharacterKit {
     fn get_stat_columns(&self, enemy_config: &EnemyConfig) -> Vec<StatColumnDesc>;
     // fn get_hit_split(&self, column_type: StatColumnType) -> Vec<f64>;
     fn compute_stat_column(&self, column_type: StatColumnType, split: (usize, &f64), character_state: &CharacterState, character_stats: &CharacterStats, boosts: &Boosts, enemy_config: &EnemyConfig) -> f64;
+}
+
+#[macro_export]
+macro_rules! wrong_config {
+    ($expected:ty) => {{
+        fn f() {}
+        fn type_name_of<T>(_: T) -> &'static str {
+            std::any::type_name::<T>()
+        }
+        let name = type_name_of(f);
+        let name = name.strip_suffix("::f").unwrap();
+        let expected = std::any::type_name::<$expected>();
+        panic!("Config Type passed to {} was not {}. This is a bug in the code. Please report this to the developer.", name, expected);
+    }}
+}
+
+#[macro_export]
+macro_rules! shared_configs {
+    (
+        prefix $prefix:ident;
+
+        Base {
+            $( $base_field:ident: $base_type:ty ),* $(,)?
+        }
+
+        Teammate {
+            $( $teammate_field:ident: $teammate_type:ty ),* $(,)?
+        }
+
+        Shared {
+            $( $shared_field:ident: $shared_type:ty ),* $(,)?
+        }
+    ) => {
+        paste::paste! {
+            #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize, specta::Type)]
+            pub struct [<$prefix BaseConfig>] {
+                $( pub $base_field: $base_type, )*
+                $( pub $shared_field: $shared_type, )*
+            }
+
+            #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize, specta::Type)]
+            pub struct [<$prefix TeammateConfig>] {
+                $( pub $teammate_field: $teammate_type, )*
+                $( pub $shared_field: $shared_type, )*
+            }
+
+            #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize, specta::Type)]
+            pub struct [<$prefix SharedConfig>] {
+                $( pub $shared_field: $shared_type ),*
+            }
+
+            impl From<[<$prefix Config>]> for [<$prefix SharedConfig>] {
+                fn from(value: [<$prefix Config>]) -> Self {
+                    match value {
+                        [<$prefix Config>]::Own(config) => Self {
+                            $( $shared_field: config.$shared_field ),*
+                        },
+                        [<$prefix Config>]::Teammate(config) => Self {
+                            $( $shared_field: config.$shared_field ),*
+                        },
+                    }
+                }
+            }
+
+            #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize, specta::Type)]
+            pub enum [<$prefix Config>] {
+                Own([<$prefix BaseConfig>]),
+                Teammate([<$prefix TeammateConfig>]),
+            }
+        }
+    };
 }
 
 //=== Self Reminder: Add new characters down here! :) ===

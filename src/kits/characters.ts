@@ -31,6 +31,6 @@ export const CharacterKitMap = {
     [Characters.Sparkle]: {
         component: SparkleKit,
         defaultConfig: SparkleDefaultConfig,
-        wrapConfig: c => ({ Sparkle: c }),
+        wrapConfig: c => ({ Sparkle: { Own: c } }),
     },
 } satisfies Record<Characters, CharacterKitShit<any>>

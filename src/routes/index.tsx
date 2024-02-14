@@ -1,4 +1,4 @@
-import { Character, CharacterConfig, EffectPropertyType, IShallBeMyOwnSwordConfig, JingliuConfig, LightCone, Relic, RelicSlot, ResolvedCalculatorResult, SortResultsSerde, commands } from "@/bindings.gen";
+import { Character, CharacterConfig, EffectPropertyType, IShallBeMyOwnSwordConfig, JingliuConfig, LightCone, LightConeConfig, Relic, RelicSlot, ResolvedCalculatorResult, SortResultsSerde, commands } from "@/bindings.gen";
 import { OptimizerTable } from "@/components/domain/optimizer-table";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
@@ -6,7 +6,7 @@ import { Header } from "@/components/ui/header";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Column, Row } from "@/components/util/flex";
 import { CharacterKitComponent, CharacterKitMap, Characters } from "@/kits/characters";
-import { LightCones } from "@/kits/light-cones";
+import { LightConeKitComponent, LightConeKitMap, LightCones } from "@/kits/light-cones";
 import { IShallBeMyOwnSwordKit } from "@/kits/lightcones/i-shall-be-my-own-sword";
 import { useCalcs, useCharacters, useRelics, useSession } from "@/store";
 import { cn } from "@/utils";
@@ -300,6 +300,42 @@ function CharacterKitCard<C extends Characters>(props: { character: C, onChange?
     )
 }
 
+function LightConeKitCard<C extends LightCones>(props: { character: Characters, lightCone: C | undefined, onChange?: (value: LightConeConfig) => void }) {
+    if (props.lightCone === undefined) {
+        return <Card>
+            <CardTitle>Light Cone Config</CardTitle>
+            No Light Cone Selected
+        </Card>
+    }
+
+    type Config = (typeof LightConeKitMap)[C]["defaultConfig"];
+    const lightConeKitShit = LightConeKitMap[props.lightCone];
+    const MyComponent = lightConeKitShit.component as LightConeKitComponent<Config>;
+    const [kit, setKit] = useState<Config>(lightConeKitShit.defaultConfig);
+    useEffect(() => {
+        if (props.onChange) {
+            props.onChange(lightConeKitShit.wrapConfig(kit));
+        }
+    }, [kit]);
+
+    const lightConeState = useCharacters(s => s.getCharacter(props.character).lightCone?.[1]) // s.lightCones[props.lightCone]?.state) ?? defaultLightConeState;
+
+    return (
+        <Card>
+            <CardTitle>Light Cone Config</CardTitle>
+            { lightConeState &&
+                <Suspense fallback="">
+                    <MyComponent
+                        lightConeState={lightConeState}
+                        value={kit}
+                        onChange={setKit}
+                    />
+                </Suspense>
+            }
+        </Card>
+    )
+}
+
 // 0-20  A0
 // 20-30 A1
 // 30-40 A2
@@ -309,7 +345,7 @@ function CharacterKitCard<C extends Characters>(props: { character: C, onChange?
 // 70-80 A6
 function *generateLevels() {
     function makeValue(i: number, ascension: number) {
-        return { value: `${i};${ascension}`, label: `Level ${i}, Ascension ${ascension}` };
+        return { value: `${i};${ascension}`, label: `Level ${i}, A${ascension}` };
     }
 
     for (let i = 1; i <= 80; i++) {
@@ -326,7 +362,7 @@ const LevelOptions = Array.from(generateLevels()).reverse();
 
 // const AscensionOptions = new Array(7).fill(0).map((_, i) => ({ value: i.toString(), label: `A${i}` })).reverse();
 const EidolonOptions = new Array(7).fill(0).map((_, i) => ({ value: i.toString(), label: `E${i}` })).reverse();
-const SuperImpositionOptions = new Array(6).fill(0).map((_, i) => ({ value: i.toString(), label: `S${i}` })).reverse();
+const SuperImpositionOptions = new Array(6).fill(0).map((_, i) => ({ value: (i - 1).toString(), label: `S${i}` })).reverse();
 
 function CharacterSelectCard() {
     const [character, setCharacter] = useSession(s => [s.selectedCharacter, s.setSelectedCharacter]);
@@ -340,10 +376,10 @@ function CharacterSelectCard() {
                     <Combobox className="w-full min-w-0"
                         modalWidth={300}
                         value={character}
-                        onChange={(c) => startTransition(() => {
+                        onChange={(c) => {
                             setCharacter(c);
                             // setKit(CharacterKitMap[c].defaultConfig)
-                        })}
+                        }}
                         deselectable={false}
                         options={[
                             { value: Characters.Jingliu, label: "Jingliu" },
@@ -351,34 +387,62 @@ function CharacterSelectCard() {
                             { value: Characters.Sparkle, label: "Sparkle" },
                         ]}
                     />
+                </Row>
 
-                    <Combobox className="flex-shrink basis-0"
-                        value={characterInfo.state.eidolon.toString()}
-                        onChange={(c) => startTransition(() => {
-                            // characterState.eidolon = +c;
+                <Row className="gap-2">
+                    <Combobox className="w-full"
+                        value={`${characterInfo.state.level};${characterInfo.state.ascension}`}
+                        onChange={(c) => {
+                            const [level, ascension] = c.split(";");
+                            // characterState.level = +level;
+                            // characterState.ascension = +ascension;
                             updateCharacter(character, (character) => {
-                                character.state.eidolon = +c;
+                                character.state.level = +level;
+                                character.state.ascension = +ascension;
                             })
-                        })}
+                        }}
+                        deselectable={false}
+                        options={LevelOptions}
+                    />
+
+                    <Combobox className="w-[110px]"
+                        value={characterInfo.state.eidolon.toString()}
+                        onChange={async (c) => {
+                            const upgrades = await commands.getEidolonUpgrades(character);
+                            const newEidolon = +c;
+
+                            updateCharacter(character, (character) => {
+                                const oldEidolon = character.state.eidolon;
+                                character.state.eidolon = newEidolon;
+
+                                // Need to apply (or remove) the upgrades
+                                if (newEidolon > oldEidolon) {
+                                    for (let i = oldEidolon + 1; i <= newEidolon; i++) {
+                                        const upgrade = upgrades[i - 1];
+                                        character.state.skills.basic  += upgrade.basic;
+                                        character.state.skills.skill  += upgrade.skill;
+                                        character.state.skills.ult    += upgrade.ult;
+                                        character.state.skills.talent += upgrade.talent;
+                                    }
+                                } else if (newEidolon < oldEidolon) {
+                                    for (let i = oldEidolon; i > newEidolon; i--) {
+                                        if (i === 0) {
+                                            break;
+                                        }
+
+                                        const upgrade = upgrades[i - 1];
+                                        character.state.skills.basic  -= upgrade.basic;
+                                        character.state.skills.skill  -= upgrade.skill;
+                                        character.state.skills.ult    -= upgrade.ult;
+                                        character.state.skills.talent -= upgrade.talent;
+                                    }
+                                }
+                            })
+                        }}
                         deselectable={false}
                         options={EidolonOptions}
                     />
                 </Row>
-
-                <Combobox className="w-full"
-                    value={`${characterInfo.state.level};${characterInfo.state.ascension}`}
-                    onChange={(c) => startTransition(() => {
-                        const [level, ascension] = c.split(";");
-                        // characterState.level = +level;
-                        // characterState.ascension = +ascension;
-                        updateCharacter(character, (character) => {
-                            character.state.level = +level;
-                            character.state.ascension = +ascension;
-                        })
-                    })}
-                    deselectable={false}
-                    options={LevelOptions}
-                />
             </Column>
 
             <Column>
@@ -387,7 +451,7 @@ function CharacterSelectCard() {
                     <Combobox className="w-full min-w-0"
                         modalWidth={300}
                         value={characterInfo.lightCone?.[0]}
-                        onChange={(c) => startTransition(() => {
+                        onChange={(c) => {
                             // props.setLightCone(c);
                             updateCharacter(character, (character) => {
                                 if (c === undefined) {
@@ -402,7 +466,7 @@ function CharacterSelectCard() {
                                 }
                             })
                             // setKit(CharacterKitMap[c].defaultConfig)
-                        })}
+                        }}
                         deselectable={true}
                         options={[
                             { value: LightCones.EarthlyEscapade, label: "Earthly Escapade" },
@@ -410,36 +474,38 @@ function CharacterSelectCard() {
                             { value: LightCones.IShallBeMyOwnSword, label: "I Shall Be My Own Sword" },
                         ]}
                     />
+                </Row>
 
-                    <Combobox className="flex-shrink basis-0"
+                <Row className="gap-2">
+                    <Combobox className="w-full"
+                        value={`${characterInfo.lightCone?.[1].level ?? 80};${characterInfo.lightCone?.[1].ascension ?? 6}`}
+                        disabled={characterInfo.lightCone === undefined}
+                        onChange={(c) => {
+                            const [level, ascension] = c.split(";");
+                            // lcState.level = +level;
+                            // lcState.ascension = +ascension;
+                            updateCharacter(character, (character) => {
+                                character.lightCone![1].level = +level;
+                                character.lightCone![1].ascension = +ascension;
+                            })
+                        }}
+                        deselectable={false}
+                        options={LevelOptions}
+                    />
+
+                    <Combobox className="w-[110px]"
                         value={characterInfo.lightCone?.[1].superimposition.toString() ?? "0"}
                         disabled={characterInfo.lightCone === undefined}
-                        onChange={(c) => startTransition(() => {
+                        onChange={(c) => {
                             // lcState.superimposition = +c;
                             updateCharacter(character, (character) => {
                                 character.lightCone![1].superimposition = +c;
                             })
-                        })}
+                        }}
                         deselectable={false}
                         options={SuperImpositionOptions}
                     />
                 </Row>
-
-                <Combobox className="w-full"
-                    value={`${characterInfo.lightCone?.[1].level ?? 80};${characterInfo.lightCone?.[1].ascension ?? 6}`}
-                    disabled={characterInfo.lightCone === undefined}
-                    onChange={(c) => startTransition(() => {
-                        const [level, ascension] = c.split(";");
-                        // lcState.level = +level;
-                        // lcState.ascension = +ascension;
-                        updateCharacter(character, (character) => {
-                            character.lightCone![1].level = +level;
-                            character.lightCone![1].ascension = +ascension;
-                        })
-                    })}
-                    deselectable={false}
-                    options={LevelOptions}
-                />
             </Column>
         </Column>
     </Card>;
@@ -456,10 +522,7 @@ function Index() {
     // const characterKitShit = CharacterKitMap[character];
     const [kit, setKit] = useState<CharacterConfig>();
 
-    const [lcKit, setLcKit] = useState<IShallBeMyOwnSwordConfig>({
-        eclipse_stacks: 3,
-        max_stack_def_pen: true,
-    });
+    const [lcKit, setLcKit] = useState<LightConeConfig>();
 
     const [filters, setFilters] = useState<((r: Relic) => boolean)[]>([])
 
@@ -487,7 +550,7 @@ function Index() {
                 characterState.state,
                 // { IShallBeMyOwnSword: lcKit },
                 // lcState,
-                lcState ? [{ IShallBeMyOwnSword: lcKit }, lcState] : null,
+                lcKit && lcState ? [lcKit, lcState] : null,
                 {
                     count: 1,
                     level: 95,
@@ -526,7 +589,7 @@ function Index() {
 
                 <CharacterKitCard key={character} character={character} onChange={setKit} />
 
-                <Card>
+                {/* <Card>
                     <CardTitle>Light Cone Config</CardTitle>
                     <Suspense fallback="Loading...">
                         { lightCone &&
@@ -536,7 +599,8 @@ function Index() {
                             onChange={setLcKit}
                         /> }
                     </Suspense>
-                </Card>
+                </Card> */}
+                <LightConeKitCard key={lightCone} character={character} lightCone={lightCone} onChange={setLcKit} />
 
                 <MainStatFilterCard onChange={fs => setFilters(fs)}/>
 

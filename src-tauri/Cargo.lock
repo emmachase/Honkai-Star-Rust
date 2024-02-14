@@ -1181,6 +1181,7 @@ dependencies = [
  "assert_float_eq",
  "codegen",
  "lazy_static",
+ "paste",
  "serde",
  "serde_json",
  "serde_tuple",

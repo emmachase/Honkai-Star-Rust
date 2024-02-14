@@ -125,7 +125,7 @@ impl JingliuDescriptions {
 // TODO: get descs from type instead of order
 
 impl CharacterKit for Jingliu {
-    fn apply_base_combat_passives(&self, _enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts) {
+    fn apply_base_combat_effects(&self, _enemy_config: &EnemyConfig, character_state: &CharacterState, boosts: &mut Boosts) {
         if self.config.enhanced_state {
             if character_state.traces.ability_1 {
                 boosts.effect_res += 0.35;
