@@ -9,8 +9,6 @@ use super::LightConeKit;
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, Type)]
 pub struct EarthlyEscapadeConfig {
     pub has_mask: bool,
-    // pub eclipse_stacks: u8,
-    // pub max_stack_def_pen: bool,
 }
 
 pub struct EarthlyEscapade {
