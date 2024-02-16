@@ -1,6 +1,6 @@
 import { LightConeConfig, LightConeState } from "@/bindings.gen";
-import { IShallBeMyOwnSwordDefaultConfig, IShallBeMyOwnSwordKit } from "./lightcones/i-shall-be-my-own-sword";
-import { EarthlyEscapadeDefaultConfig, EarthlyEscapadeKit } from "./lightcones/earthly-escapade";
+import { IShallBeMyOwnSwordKit } from "./lightcones/i-shall-be-my-own-sword";
+import { EarthlyEscapadeKit } from "./lightcones/earthly-escapade";
 
 export enum LightCones {
     IShallBeMyOwnSword = "IShallBeMyOwnSword",
@@ -24,12 +24,12 @@ interface LightConeKitShit<Config> {
 export const LightConeKitMap = {
     [LightCones.IShallBeMyOwnSword]: {
         component: IShallBeMyOwnSwordKit,
-        defaultConfig: IShallBeMyOwnSwordDefaultConfig,
+        defaultConfig: IShallBeMyOwnSwordKit.defaultConfig,
         wrapConfig: c => ({ IShallBeMyOwnSword: c }),
     },
     [LightCones.EarthlyEscapade]: { // TODO: Implement EarthlyEscapade
         component: EarthlyEscapadeKit,
-        defaultConfig: EarthlyEscapadeDefaultConfig,
+        defaultConfig: EarthlyEscapadeKit.defaultConfig,
         wrapConfig: c => ({ EarthlyEscapade: c }),
     },
 } satisfies Record<LightCones, LightConeKitShit<any>>

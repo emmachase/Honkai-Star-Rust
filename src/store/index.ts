@@ -23,9 +23,14 @@ export const useRelics = create<{
     setRelics: (relics) => set({ relics }),
 }), { name: "relics" }))
 
+interface FilterForm {
+    statType: "base" | "combat"
+}
+
 interface MyCoolCharacterInformation {
     state: CharacterState,
     lightCone: [LightCones, LightConeState] | undefined,
+    filterForm?: FilterForm,
 }
 
 const defaultCharacterState = {
@@ -55,20 +60,25 @@ const defaultCharacterState = {
     },
 }
 
+const defaultCharacterInfo: MyCoolCharacterInformation = { state: defaultCharacterState, lightCone: undefined }
+const defaultFilterForm: FilterForm = { statType: "combat" }
+
 export const useCharacters = create<{
     characters: Partial<Record<Characters, MyCoolCharacterInformation>>,
     setCharacters: (characters: Partial<Record<Characters, MyCoolCharacterInformation>>) => void
     getCharacter: (character: Characters) => MyCoolCharacterInformation
     updateCharacter: (character: Characters, updater: (character: Draft<MyCoolCharacterInformation>) => void) => void
+    getFilterForm: (character: Characters) => FilterForm
+    updateFilterForm: (character: Characters, updater: (filterForm: Draft<FilterForm>) => void) => void
 }>()(persist((set, get) => ({
     characters: {},
     setCharacters: (characters) => set({ characters }),
     getCharacter: (character: Characters) => {
-        return get().characters[character] ?? { state: defaultCharacterState, lightCone: undefined }
+        return get().characters[character] ?? defaultCharacterInfo
     },
     updateCharacter: (character, updater) => {
         set((state) => {
-            const characterState = state.characters[character] ?? { state: defaultCharacterState, lightCone: undefined }
+            const characterState = state.characters[character] ?? defaultCharacterInfo
             const newState = produce(characterState, updater)
 
             return {
@@ -77,6 +87,14 @@ export const useCharacters = create<{
                     [character]: newState,
                 }
             }
+        })
+    },
+    getFilterForm: (character) => {
+        return get().characters[character]?.filterForm ?? defaultFilterForm
+    },
+    updateFilterForm: (character, updater) => {
+        get().updateCharacter(character, (character) => {
+            character.filterForm = produce(character.filterForm ?? defaultFilterForm, updater)
         })
     }
 }), { name: "characters" }))

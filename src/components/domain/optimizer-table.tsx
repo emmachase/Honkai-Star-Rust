@@ -6,6 +6,7 @@ import { Button } from "../ui/button"
 import { cn } from "@/utils"
 import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 import { ArrowDown10 } from "lucide-react"
+import { useCharacters } from "@/store"
 
 // type OptimizerData = CharacterStats
 
@@ -30,13 +31,13 @@ const roundCell = (context: Context) => RoundedFormatter.format(context.getValue
 const decimalCell = (context: Context) => DecimalFormatter.format(context.getValue())
 const percentCell = (context: Context) => PercentFormatter.format(context.getValue())
 
-export function OptimizerTable({ data: allSorts, className, ...props }: React.HTMLAttributes<HTMLDivElement> & { data?: SortResultsSerde }) {
+export function OptimizerTable({ data: allSorts, className, statType, ...props }: React.HTMLAttributes<HTMLDivElement> & { data?: SortResultsSerde, statType: 0 | 1 }) {
     // const columns: ColumnDef<ResolvedCalculatorResult>[] = [
     //     {
     //         accessorKey: ""
     //     }
     // ]
-    const statType = 1 as 0 | 1
+    // const statType = useCharacters() // 1 as 0 | 1
 
     const [activeColumn, setActiveColumn] = useState("atk")
 

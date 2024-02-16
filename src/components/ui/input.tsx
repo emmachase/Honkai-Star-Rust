@@ -3,6 +3,7 @@ import * as React from "react"
 import { cn } from "@/utils"
 import { Row } from "../util/flex"
 import { useEffect, useState } from "react";
+import { NaNTo, clamp } from "@/utils/math";
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {}
@@ -32,7 +33,7 @@ const BufferedInput = React.forwardRef<HTMLInputElement, InputProps>(
     }
 )
 
-const Input = React.forwardRef<HTMLInputElement, InputProps & { raw?: boolean }>(
+export const Input = React.forwardRef<HTMLInputElement, InputProps & { raw?: boolean }>(
   ({ className, type, raw, ...props }, ref) => {
     const Component = raw ? "input" : BufferedInput;
 
@@ -51,7 +52,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps & { raw?: boolean }>
 )
 Input.displayName = "Input"
 
-const SuffixInput = React.forwardRef<HTMLInputElement, InputProps & { suffix: string }>(
+export const SuffixInput = React.forwardRef<HTMLInputElement, InputProps & { suffix: string }>(
     ({ className, suffix, type, disabled, ...props }, ref) => {
         return (<Row className={cn("h-10 gap-0 overflow-hidden rounded-md border border-input ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2", disabled && "cursor-not-allowed opacity-50", className)} ref={ref}>
             <BufferedInput
@@ -70,4 +71,43 @@ const SuffixInput = React.forwardRef<HTMLInputElement, InputProps & { suffix: st
     }
 )
 
-export { Input, SuffixInput }
+export function LabeledNumberInput({
+    value,
+    label,
+    onChange,
+    disabled,
+    percent,
+    min,
+    max,
+}: {
+    value: number,
+    label: string,
+    onChange?: (x: number) => void,
+    disabled?: boolean,
+    percent?: boolean,
+    min?: number,
+    max?: number,
+}) {
+    const rescaledValue = percent ? value * 100 : value
+
+    const inputProps: Partial<React.ComponentPropsWithRef<typeof Input>> = {
+        disabled,
+        className: "h-8",
+        value: rescaledValue,
+        onChange: x => {
+            const xValue = NaNTo(parseFloat(x.currentTarget.value), min ?? 0)
+            const newValue = percent ? xValue / 100 : xValue
+            onChange?.(clamp(newValue, min ?? -Infinity, max ?? Infinity))
+        },
+    }
+
+    return (
+        <Row className="items-center">
+            { percent
+                ? <SuffixInput suffix="%" {...inputProps} />
+                : <Input {...inputProps} />
+            }
+            <span className="whitespace-nowrap">{label}</span>
+        </Row>
+    )
+}

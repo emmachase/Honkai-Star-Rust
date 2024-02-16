@@ -98,3 +98,5 @@ export function useForm<T extends Record<string, unknown>>(
 
     return myForm;
 }
+
+export type Form<T extends Record<string, unknown>> = ReturnType<typeof useForm<T>>

@@ -1,6 +1,6 @@
 import { CharacterConfig, CharacterState } from "@/bindings.gen";
-import { JingliuDefaultConfig, JingliuKit } from "./characters/jingliu";
-import { SparkleDefaultConfig, SparkleKit } from "./characters/sparkle";
+import { JingliuKit } from "./characters/jingliu";
+import { SparkleKit, SparkleTeammateKit } from "./characters/sparkle";
 
 export enum Characters {
     Jingliu = "Jingliu",
@@ -25,12 +25,12 @@ interface CharacterKitShit<Config> {
 export const CharacterKitMap = {
     [Characters.Jingliu]: {
         component: JingliuKit,
-        defaultConfig: JingliuDefaultConfig,
+        defaultConfig: JingliuKit.defaultConfig,
         wrapConfig: c => ({ Jingliu: c }),
     },
     [Characters.Sparkle]: {
         component: SparkleKit,
-        defaultConfig: SparkleDefaultConfig,
+        defaultConfig: SparkleKit.defaultConfig,
         wrapConfig: c => ({ Sparkle: { Own: c } }),
     },
 } satisfies Record<Characters, CharacterKitShit<any>>

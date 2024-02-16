@@ -1,27 +1,30 @@
-import { CharacterState, SparkleBaseConfig } from "@/bindings.gen";
+import { CharacterState, SparkleBaseConfig, SparkleTeammateConfig } from "@/bindings.gen";
 import { LabeledSwitch } from "@/components/ui/switch";
 import { Column } from "@/components/util/flex";
 import { SliderWithInput } from "@/components/ui/slider";
-import { useForm } from "@/utils/form";
+import { Form, useForm } from "@/utils/form";
+import { LabeledNumberInput } from "@/components/ui/input";
 
-export const SparkleDefaultConfig: SparkleBaseConfig = {
+SparkleKit.defaultConfig = {
     skill_cd_buff: true,
     cipher_buff: true,
     talent_dmg_stacks: 3,
     quantum_allies: 3,
-}
+} as SparkleBaseConfig;
 
-export function SparkleKit(props: {
-    characterState: CharacterState,
-    value: SparkleBaseConfig,
-    onChange: (value: SparkleBaseConfig) => void
-}) {
-    const {
-        register,
-        registerSwitch,
-    } = useForm<SparkleBaseConfig>(props.value, props.onChange);
+SparkleTeammateKit.defaultConfig = {
+    cd_stat: 2.4,
+    skill_cd_buff: true,
+    cipher_buff: true,
+    talent_dmg_stacks: 3,
+    quantum_allies: 3,
+} as SparkleTeammateConfig;
 
-    return <Column>
+function sharedOptions({
+    register,
+    registerSwitch,
+}: Form<SparkleBaseConfig & SparkleTeammateConfig>) {
+    return <>
         <LabeledSwitch {...registerSwitch("skill_cd_buff")}
             label="Skill CD Buff"
         />
@@ -39,5 +42,35 @@ export function SparkleKit(props: {
             label="Quantum Allies"
             max={3}
         />
+    </>
+}
+
+export function SparkleKit(props: {
+    characterState: CharacterState,
+    value: SparkleBaseConfig,
+    onChange: (value: SparkleBaseConfig) => void
+}) {
+    const form = useForm<SparkleBaseConfig>(props.value, props.onChange);
+
+    return <Column>
+        {sharedOptions(form)}
+    </Column>
+}
+
+export function SparkleTeammateKit(props: {
+    characterState: CharacterState,
+    value: SparkleTeammateConfig,
+    onChange: (value: SparkleTeammateConfig) => void
+}) {
+    const form = useForm<SparkleTeammateConfig>(props.value, props.onChange), {
+        register,
+    } = form;
+
+    return <Column>
+        <LabeledNumberInput {...register("cd_stat")} percent min={0.5}
+            label="Sparkle's CD"
+        />
+
+        {sharedOptions(form)}
     </Column>
 }

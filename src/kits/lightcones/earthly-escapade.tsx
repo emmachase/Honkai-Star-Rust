@@ -3,9 +3,9 @@ import { LabeledSwitch } from "@/components/ui/switch";
 import { Column } from "@/components/util/flex";
 import { useForm } from "@/utils/form";
 
-export const EarthlyEscapadeDefaultConfig: EarthlyEscapadeConfig = {
+EarthlyEscapadeKit.defaultConfig = {
     has_mask: true,
-}
+} as EarthlyEscapadeConfig;
 
 export function EarthlyEscapadeKit(props: {
     lightConeState: LightConeState,

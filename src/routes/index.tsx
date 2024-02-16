@@ -1,6 +1,7 @@
 import { Character, CharacterConfig, EffectPropertyType, IShallBeMyOwnSwordConfig, JingliuConfig, LightCone, LightConeConfig, Relic, RelicSlot, ResolvedCalculatorResult, SortResultsSerde, commands } from "@/bindings.gen";
 import { OptimizerTable } from "@/components/domain/optimizer-table";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Combobox } from "@/components/ui/combobox";
 import { Header } from "@/components/ui/header";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -516,7 +517,8 @@ function Index() {
     // const [lightCone, setLightCone] = useState<LightCones | undefined>(LightCones.IShallBeMyOwnSword);
 
     const [character, setCharacter] = useSession(s => [s.selectedCharacter, s.setSelectedCharacter]);
-    const characterState = useCharacters(s => s.getCharacter(character)); //s.characters[character]?.state) ?? defaultCharacterState;
+    const characterInfo = useCharacters(s => s.getCharacter(character)); //s.characters[character]?.state) ?? defaultCharacterState;
+    const [filterForm, updateFilterForm] = useCharacters(s => [s.getFilterForm(character), s.updateFilterForm]);
     const [lightCone, lcState] = useCharacters(s => s.characters[character]?.lightCone) ?? [undefined, undefined];
 
     // const characterKitShit = CharacterKitMap[character];
@@ -547,7 +549,7 @@ function Index() {
                 filteredRelics,
                 // { Jingliu: kit },
                 kit,
-                characterState.state,
+                characterInfo.state,
                 // { IShallBeMyOwnSword: lcKit },
                 // lcState,
                 lcKit && lcState ? [lcKit, lcState] : null,
@@ -604,6 +606,19 @@ function Index() {
 
                 <MainStatFilterCard onChange={fs => setFilters(fs)}/>
 
+                <Card>
+                    <CardTitle>Stat Filters</CardTitle>
+                    <Column>
+                        {/* <Row className="gap-0">
+                            <Button variant="outline" size="sm">Base Stats</Button>
+                            <Button size="sm">Combat Stats</Button>
+                        </Row> */}
+                        <ButtonGroup value={filterForm.statType} onChange={v => updateFilterForm(character, f => { f.statType = v })}
+                            options={[{ label: "Base Stats", value: "base" }, { label: "Combat Stats", value: "combat" }]}
+                        />
+                    </Column>
+                </Card>
+
                 <PermutationCard
                     allRelics={allRelics}
                     filteredRelics={filteredRelics}
@@ -619,6 +634,7 @@ function Index() {
                     scrollbar={<ScrollBar orientation="horizontal" />}
                 >
                     <OptimizerTable className="w-full"
+                        statType={filterForm.statType === "base" ? 0 : 1}
                         data={result}
                     />
                 </ScrollArea>
