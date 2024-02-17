@@ -109,7 +109,7 @@ export const useSession = create<{
 
 export const useCalcs = create<{
     sortResults: SortResultsSerde | undefined
-    setSortResults: (sortResults: SortResultsSerde) => void
+    setSortResults: (sortResults: SortResultsSerde | undefined) => void
 
     running: boolean
     setRunning: (running: boolean) => void

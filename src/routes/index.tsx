@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Combobox } from "@/components/ui/combobox";
 import { Header } from "@/components/ui/header";
+import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Column, Row } from "@/components/util/flex";
 import { CharacterKitComponent, CharacterKitMap, Characters } from "@/kits/characters";
@@ -11,7 +12,7 @@ import { LightConeKitComponent, LightConeKitMap, LightCones } from "@/kits/light
 import { IShallBeMyOwnSwordKit } from "@/kits/lightcones/i-shall-be-my-own-sword";
 import { useCalcs, useCharacters, useRelics, useSession } from "@/store";
 import { cn } from "@/utils";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { PropsWithChildren, Suspense, startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 
@@ -237,7 +238,7 @@ function CharacterPreview(props: { character: Character }) {
         queryFn: () => commands.getCharPreview(props.character),
     })
 
-    return <img src={"/hsr/" + src.data} className="w-full h-[300px] object-cover"/>
+    return <img src={"/hsr/" + src.data} className="w-full h-[320px] object-cover"/>
 }
 
 function LightConeIcon(props: { lightCone: LightCone, className?: string }) {
@@ -254,7 +255,7 @@ function CharacterPreviewCard(props: { character: Character, lightCone?: LightCo
     const lightCone = useDeferredValue(props.lightCone);
 
     return (
-        <Card className="p-0 bg-transparent relative h-[300px]">
+        <Card className="p-0 bg-transparent relative h-[320px]">
             <Suspense fallback="">
                 <CharacterPreview character={character}/>
                 {lightCone && <>
@@ -450,6 +451,7 @@ function CharacterSelectCard() {
                 <CardTitle>Light Cone</CardTitle>
                 <Row className="gap-2">
                     <Combobox className="w-full min-w-0"
+                        placeholder="No Light Cone Equipped"
                         modalWidth={300}
                         value={characterInfo.lightCone?.[0]}
                         onChange={(c) => {
@@ -471,7 +473,6 @@ function CharacterSelectCard() {
                         deselectable={true}
                         options={[
                             { value: LightCones.EarthlyEscapade, label: "Earthly Escapade" },
-                            // { value: Characters.Xueyi, label: "Xueyi" },
                             { value: LightCones.IShallBeMyOwnSword, label: "I Shall Be My Own Sword" },
                         ]}
                     />
@@ -483,8 +484,6 @@ function CharacterSelectCard() {
                         disabled={characterInfo.lightCone === undefined}
                         onChange={(c) => {
                             const [level, ascension] = c.split(";");
-                            // lcState.level = +level;
-                            // lcState.ascension = +ascension;
                             updateCharacter(character, (character) => {
                                 character.lightCone![1].level = +level;
                                 character.lightCone![1].ascension = +ascension;
@@ -498,7 +497,6 @@ function CharacterSelectCard() {
                         value={characterInfo.lightCone?.[1].superimposition.toString() ?? "0"}
                         disabled={characterInfo.lightCone === undefined}
                         onChange={(c) => {
-                            // lcState.superimposition = +c;
                             updateCharacter(character, (character) => {
                                 character.lightCone![1].superimposition = +c;
                             })
@@ -513,17 +511,12 @@ function CharacterSelectCard() {
 }
 
 function Index() {
-    // const [character, setCharacter] = useState<Characters>(Characters.Jingliu);
-    // const [lightCone, setLightCone] = useState<LightCones | undefined>(LightCones.IShallBeMyOwnSword);
-
-    const [character, setCharacter] = useSession(s => [s.selectedCharacter, s.setSelectedCharacter]);
-    const characterInfo = useCharacters(s => s.getCharacter(character)); //s.characters[character]?.state) ?? defaultCharacterState;
+    const character = useSession(s => s.selectedCharacter);
+    const characterInfo = useCharacters(s => s.getCharacter(character));
     const [filterForm, updateFilterForm] = useCharacters(s => [s.getFilterForm(character), s.updateFilterForm]);
     const [lightCone, lcState] = useCharacters(s => s.characters[character]?.lightCone) ?? [undefined, undefined];
 
-    // const characterKitShit = CharacterKitMap[character];
     const [kit, setKit] = useState<CharacterConfig>();
-
     const [lcKit, setLcKit] = useState<LightConeConfig>();
 
     const [filters, setFilters] = useState<((r: Relic) => boolean)[]>([])
@@ -533,8 +526,10 @@ function Index() {
         return allRelics.filter(r => filters.every(f => f(r)));
     }, [allRelics, filters]);
 
-    const [result, setResult] = useCalcs(c => [c.sortResults, c.setSortResults]); // useState<SortResultsSerde>();
-    const [running, setRunning] = useCalcs(c => [c.running, c.setRunning]); // TODO
+    const [result, setResult] = useCalcs(c => [c.sortResults, c.setSortResults]);
+    useEffect(() => setResult(undefined), [character]); // Clear search results when character changes
+
+    const [running, setRunning] = useCalcs(c => [c.running, c.setRunning]);
     const triggerSearch = async () => {
         if (running) {
             await commands.stopPranking();
@@ -547,11 +542,8 @@ function Index() {
             setRunning(true);
             setResult(await commands.prankHimJohn(
                 filteredRelics,
-                // { Jingliu: kit },
                 kit,
                 characterInfo.state,
-                // { IShallBeMyOwnSword: lcKit },
-                // lcState,
                 lcKit && lcState ? [lcKit, lcState] : null,
                 {
                     count: 1,
@@ -562,60 +554,47 @@ function Index() {
                     weakness_broken: false,
                     debuff_count: 3,
                 },
+                []
             ));
             setRunning(false);
         }
     };
+
+    const { data: characterActions } = useQuery({
+        queryKey: ["characterAction", kit],
+        queryFn: () => kit ? commands.getCharacterActions(kit) : undefined,
+    })
 
     return (
         <Column className="min-w-0">
             <h3>Welcome Home!</h3>
 
             <Row className="flex-wrap gap-2 justify-center">
-                {/* <Card className="p-0 bg-transparent">
-                    <img src="/hsr/image/character_preview/1212.png" className="w-full h-[300px] object-cover"/>
-                </Card> */}
                 <CharacterPreviewCard character={character} lightCone={lightCone} />
 
                 <CharacterSelectCard />
 
-                {/* <Card>
-                    <Suspense fallback="Loading...">
-                        <characterKitShit.component
-                            characterState={characterState}
-                            value={kit as any}
-                            onChange={setKit}
-                        />
-                    </Suspense>
-                </Card> */}
-
                 <CharacterKitCard key={character} character={character} onChange={setKit} />
 
-                {/* <Card>
-                    <CardTitle>Light Cone Config</CardTitle>
-                    <Suspense fallback="Loading...">
-                        { lightCone &&
-                        <IShallBeMyOwnSwordKit
-                            lightConeState={lcState}
-                            value={lcKit}
-                            onChange={setLcKit}
-                        /> }
-                    </Suspense>
-                </Card> */}
                 <LightConeKitCard key={lightCone} character={character} lightCone={lightCone} onChange={setLcKit} />
 
                 <MainStatFilterCard onChange={fs => setFilters(fs)}/>
 
-                <Card>
+                <Card className="w-[320px]">
                     <CardTitle>Stat Filters</CardTitle>
                     <Column>
-                        {/* <Row className="gap-0">
-                            <Button variant="outline" size="sm">Base Stats</Button>
-                            <Button size="sm">Combat Stats</Button>
-                        </Row> */}
                         <ButtonGroup value={filterForm.statType} onChange={v => updateFilterForm(character, f => { f.statType = v })}
                             options={[{ label: "Base Stats", value: "base" }, { label: "Combat Stats", value: "combat" }]}
                         />
+                        <Column className="gap-1">
+                            { characterActions?.map(action =>
+                                <Row className="justify-between items-center">
+                                    <Row className="gap-2 items-center"><Input className="w-16 p-2 h-8"/>&le;</Row>
+                                    <span>{action.replace(/(?<=[a-z])[A-Z]/, x => ` ${x}`)}</span>
+                                    <Row className="gap-2 items-center">&le;<Input className="w-16 p-2 h-8"/></Row>
+                                </Row>
+                            ) }
+                        </Column>
                     </Column>
                 </Card>
 
@@ -626,14 +605,12 @@ function Index() {
                 />
             </Row>
 
-            {/* {JSON.stringify(result)} */}
-
             <div className="w-full relative">
                 <ScrollArea
                     className="w-full"
                     scrollbar={<ScrollBar orientation="horizontal" />}
                 >
-                    <OptimizerTable className="w-full"
+                    <OptimizerTable key={character} className="w-full"
                         statType={filterForm.statType === "base" ? 0 : 1}
                         data={result}
                     />

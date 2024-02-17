@@ -106,7 +106,7 @@ pub fn apply_minor_trace_effects(character: &CharacterDescriptor, character_stat
     if character_state.traces.stat_10 { apply_std_trace_effect(&trace_ids.stat_10, boosts); }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
 pub enum StatColumnType {
     BasicDamage,
     SkillDamage,
@@ -133,6 +133,7 @@ impl StatColumnType {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct StatColumnDesc {
     pub column_type: StatColumnType,
     pub hit_splits: Vec<f64>

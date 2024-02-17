@@ -40,7 +40,11 @@ where
         return Ok(None);
     }
 
-    Character::from_name(&s).ok_or(de::Error::custom(format!("invalid character name {}", s))).map(Some)
+    return match s.as_str() {
+        "TrailblazerPreservation" => Ok(Some(Character::FireTrailblazerF)),
+        "TrailblazerDestruction"  => Ok(Some(Character::PhysicalTrailblazerF)),
+        _ => Character::from_name(&s).ok_or(de::Error::custom(format!("invalid character name {}", s))).map(Some),
+    }
 }
 
 fn from_stat_name(s: &str, slot: RelicSlot, is_main: bool) -> Option<EffectPropertyType> {

@@ -75,6 +75,10 @@ fn gen_enum(scope: &mut Scope, name: &str, json: &str, name_mapper: fn(&IdNameDe
 
         let mut block = Block::new("match s");
         for relic_set in &relic_sets {
+            if relic_set.raw_name == "{NICKNAME}" {
+                continue;
+            }
+
             block.line(format!("\"{}\" => Some({}::{}),", relic_set.raw_name, name, relic_set.name));
         }
         block.line("_ => None,");

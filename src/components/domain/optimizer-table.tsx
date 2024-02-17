@@ -1,12 +1,13 @@
 import { CharacterStats, ResolvedCalculatorResult, SortResultsSerde, SortResultsSerdeBase, Element } from "@/bindings.gen"
 import { CellContext, ColumnDef, SortingState, createColumnHelper, flexRender, getCoreRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../ui/table"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Button } from "../ui/button"
 import { cn } from "@/utils"
 import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 import { ArrowDown10 } from "lucide-react"
 import { useCharacters } from "@/store"
+import { usePrevious } from "../util/hooks"
 
 // type OptimizerData = CharacterStats
 
@@ -32,13 +33,6 @@ const decimalCell = (context: Context) => DecimalFormatter.format(context.getVal
 const percentCell = (context: Context) => PercentFormatter.format(context.getValue())
 
 export function OptimizerTable({ data: allSorts, className, statType, ...props }: React.HTMLAttributes<HTMLDivElement> & { data?: SortResultsSerde, statType: 0 | 1 }) {
-    // const columns: ColumnDef<ResolvedCalculatorResult>[] = [
-    //     {
-    //         accessorKey: ""
-    //     }
-    // ]
-    // const statType = useCharacters() // 1 as 0 | 1
-
     const [activeColumn, setActiveColumn] = useState("atk")
 
     const columnMap = useMemo(() => {
@@ -58,7 +52,7 @@ export function OptimizerTable({ data: allSorts, className, statType, ...props }
     }, [allSorts, statType])
 
     const sum = statType === 1 ? "Σ " : ""
-    const data = useMemo(() => columnMap.get(activeColumn) ?? [], [columnMap, activeColumn])
+    const data = useMemo(() => [...(columnMap.get(activeColumn) ?? [])], [columnMap, activeColumn])
     const extraCols = useMemo(() => (data?.[0]?.cols ?? []).map((c, i) => [c[0], i] as const), [data])
     const columns = useMemo(() => [
         helper.accessor(row => row.calculated_stats[statType].atk, { id: "atk", header: sum+"ATK", cell: roundCell   }),
@@ -99,7 +93,6 @@ export function OptimizerTable({ data: allSorts, className, statType, ...props }
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setActiveColumn(header.column.id)}
-                                // disabled={header.column.id === activeColumn}
                                 className={cn(activeColumn !== header.id && "mx-[12px]")}
                             >
                                 <ArrowDown10 size={16} className={cn("mr-[8px]", activeColumn !== header.id && "hidden")}/>
@@ -107,7 +100,6 @@ export function OptimizerTable({ data: allSorts, className, statType, ...props }
                                     header.column.columnDef.header,
                                     header.getContext()
                                 )}
-                                {/* <ArrowDown10 size={16} className={"mr-2 opacity-0"}/> */}
                             </Button>
                         }
                       </TableHead>
@@ -118,18 +110,18 @@ export function OptimizerTable({ data: allSorts, className, statType, ...props }
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="text-center w-[100px]">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
+                table.getRowModel().rows.map((row) => {
+                        return <TableRow
+                            key={row.id}
+                            data-state={row.getIsSelected() && "selected"}
+                        >
+                            {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id} className="text-center w-[100px]">
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </TableCell>
+                            ))}
+                        </TableRow>
+                    })
               ) : (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center">

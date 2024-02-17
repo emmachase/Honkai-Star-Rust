@@ -44,7 +44,8 @@ fn prank_him_john(
     character_cfg: CharacterConfig,
     character_state: CharacterState,
     light_cone: Option<(LightConeConfig, LightConeState)>,
-    enemy_config: EnemyConfig
+    enemy_config: EnemyConfig,
+    filters: Vec<StatFilter>,
 ) -> SortResultsSerde {
     let character_id = character_cfg.get_character_id();
     let character = use_character(character_id);
@@ -80,6 +81,7 @@ fn prank_him_john(
             light_cone,
             enemy_config,
             relic_conditionals: ConditionalRelicSetEffects::default(),
+            filters,
         },
         relics_by_slot.clone()
     );
@@ -126,7 +128,9 @@ struct CalculatorParameters {
     // light_cone_state: LightConeState,
     light_cone: Option<(Arc<dyn LightConeKit+Sync+Send>, LightConeState)>,
     enemy_config: EnemyConfig,
-    relic_conditionals: ConditionalRelicSetEffects
+    relic_conditionals: ConditionalRelicSetEffects,
+
+    filters: Vec<StatFilter>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -181,6 +185,72 @@ struct SortResultsBase {
     pub outgoing_healing_boost: BinaryHeap<Reverse<CalculatorResult>>,
     pub elemental_dmg_boost: BinaryHeap<Reverse<CalculatorResult>>,
     pub effect_hit_rate: BinaryHeap<Reverse<CalculatorResult>>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Type)]
+enum StatFilterType {
+    Base,
+    Combat,
+}
+
+macro_rules! min_max {
+    ($result:ident, $typ:ident, $min:ident, $max:ident, $col:ident) => {
+        {
+            let val = match $typ {
+                StatFilterType::Base => $result.calculated_stats.0.$col,
+                StatFilterType::Combat => $result.calculated_stats.1.$col,
+            };
+            $min.map_or(true, |min| val >= min) && $max.map_or(true, |max| val <= max)
+        }
+    };
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+enum StatFilter {
+    HP(StatFilterType, Option<f64>, Option<f64>),
+    ATK(StatFilterType, Option<f64>, Option<f64>),
+    DEF(StatFilterType, Option<f64>, Option<f64>),
+    SPD(StatFilterType, Option<f64>, Option<f64>),
+    EffectRes(StatFilterType, Option<f64>, Option<f64>),
+    CritRate(StatFilterType, Option<f64>, Option<f64>),
+    CritDmg(StatFilterType, Option<f64>, Option<f64>),
+    BreakEffect(StatFilterType, Option<f64>, Option<f64>),
+    EnergyRecharge(StatFilterType, Option<f64>, Option<f64>),
+    OutgoingHealingBoost(StatFilterType, Option<f64>, Option<f64>),
+    ElementalDmgBoost(StatFilterType, Option<f64>, Option<f64>),
+    EffectHitRate(StatFilterType, Option<f64>, Option<f64>),
+    Action(String, Option<f64>, Option<f64>),
+}
+
+impl StatFilter {
+    fn apply(&self, result: &PreCalculatorResult) -> bool {
+        match self {
+            StatFilter::HP(typ, min, max) => min_max!(result, typ, min, max, hp),
+            StatFilter::ATK(typ, min, max) => min_max!(result, typ, min, max, atk),
+            StatFilter::DEF(typ, min, max) => min_max!(result, typ, min, max, def),
+            StatFilter::SPD(typ, min, max) => min_max!(result, typ, min, max, spd),
+            StatFilter::EffectRes(typ, min, max) => min_max!(result, typ, min, max, effect_res),
+            StatFilter::CritRate(typ, min, max) => min_max!(result, typ, min, max, crit_rate),
+            StatFilter::CritDmg(typ, min, max) => min_max!(result, typ, min, max, crit_dmg),
+            StatFilter::BreakEffect(typ, min, max) => min_max!(result, typ, min, max, break_effect),
+            StatFilter::EnergyRecharge(typ, min, max) => min_max!(result, typ, min, max, energy_recharge),
+            StatFilter::OutgoingHealingBoost(typ, min, max) => min_max!(result, typ, min, max, outgoing_healing_boost),
+            StatFilter::EffectHitRate(typ, min, max) => min_max!(result, typ, min, max, effect_hit_rate),
+
+            StatFilter::ElementalDmgBoost(typ, min, max) => {
+                let val = match typ {
+                    StatFilterType::Base => result.calculated_stats.0.elemental_dmg_boost[result.calculated_stats.0.element],
+                    StatFilterType::Combat => result.calculated_stats.1.elemental_dmg_boost[result.calculated_stats.1.element],
+                };
+                min.map_or(true, |min| val >= min) && max.map_or(true, |max| val <= max)
+            },
+
+            StatFilter::Action(action, min, max) => {
+                let col = result.cols.iter().find(|(col, _)| col.to_name() == action).map(|(_, val)| *val).unwrap_or(0.0);
+                min.map_or(true, |min| col >= min) && max.map_or(true, |max| col <= max)
+            }
+        }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -459,7 +529,7 @@ fn calculate_cols(
                     calculated_stats: &(params.character_stats + base_boosts, params.character_stats + total_combat_boosts)
                 };
 
-                {
+                if params.filters.is_empty() || params.filters.iter().all(|f| f.apply(&presult)) {
                     add_presult_to_heap!(all_results, top_k, presult, relic_perm, [
                         hp, atk, def, spd,
                         effect_res, crit_rate, crit_dmg, break_effect,
@@ -535,6 +605,15 @@ fn get_lc_preview(
     use_light_cone(light_cone).preview.to_owned()
 }
 
+#[tauri::command(async)]
+#[specta::specta]
+fn get_character_actions(
+    character_cfg: CharacterConfig,
+) -> Vec<String> {
+    let character_kit = character_cfg.get_kit();
+    character_kit.get_stat_columns(&EnemyConfig::default()).iter().map(|x| x.column_type.to_name().to_owned()).collect()
+}
+
 #[derive(Debug, Clone, Type, Serialize, Deserialize, Default)]
 pub struct EidolonUpgrade {
     pub basic: u8,
@@ -573,7 +652,7 @@ pub struct Flags {
 fn main() {
     let specta_builder = {
         let specta_builder = tauri_specta::ts::builder()
-            .commands(tauri_specta::collect_commands![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_preview, get_lc_icon, get_lc_preview, get_eidolon_upgrades]);
+            .commands(tauri_specta::collect_commands![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_preview, get_lc_icon, get_lc_preview, get_eidolon_upgrades, get_character_actions]);
 
         #[cfg(debug_assertions)]
         let specta_builder = specta_builder.path("../src/bindings.gen.ts");
@@ -584,7 +663,7 @@ fn main() {
     tauri::Builder::default()
         .manage(Flags { running: Arc::new(RwLock::new(false)) })
         .plugin(specta_builder)
-        .invoke_handler(tauri::generate_handler![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_preview, get_lc_icon, get_lc_preview, get_eidolon_upgrades])
+        .invoke_handler(tauri::generate_handler![prank_him_john, stop_pranking, parse_kelz, get_description, get_char_preview, get_lc_icon, get_lc_preview, get_eidolon_upgrades, get_character_actions])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

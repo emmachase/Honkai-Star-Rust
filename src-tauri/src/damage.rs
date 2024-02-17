@@ -136,6 +136,19 @@ pub struct EnemyConfig {
     pub debuff_count: u8,
 }
 
+impl Default for EnemyConfig {
+    fn default() -> Self {
+        return Self {
+            count: 3,
+            level: 80,
+            resistance: 0.2,
+            elemental_weakness: true,
+            weakness_broken: false,
+            debuff_count: 3,
+        };
+    }
+}
+
 /**
  * Should include all boosts applied
  * - Character & Light Cone passives and conditionals

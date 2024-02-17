@@ -559,10 +559,6 @@ impl Character {
             "Sparkle" => Some(Character::Sparkle),
             "Black Swan" => Some(Character::BlackSwan),
             "Misha" => Some(Character::Misha),
-            "{NICKNAME}" => Some(Character::PhysicalTrailblazerM),
-            "{NICKNAME}" => Some(Character::PhysicalTrailblazerF),
-            "{NICKNAME}" => Some(Character::FireTrailblazerM),
-            "{NICKNAME}" => Some(Character::FireTrailblazerF),
             _ => None,
         }
     }
