@@ -219,7 +219,12 @@ enum StatFilter {
     OutgoingHealingBoost(StatFilterType, Option<f64>, Option<f64>),
     ElementalDmgBoost(StatFilterType, Option<f64>, Option<f64>),
     EffectHitRate(StatFilterType, Option<f64>, Option<f64>),
-    Action(String, Option<f64>, Option<f64>),
+
+    CritValue(StatFilterType, Option<f64>, Option<f64>),
+    EffectiveHP(StatFilterType, Option<f64>, Option<f64>),
+    Weight(StatFilterType, Option<f64>, Option<f64>),
+
+    Action(StatColumnType, Option<f64>, Option<f64>),
 }
 
 impl StatFilter {
@@ -237,6 +242,10 @@ impl StatFilter {
             StatFilter::OutgoingHealingBoost(typ, min, max) => min_max!(result, typ, min, max, outgoing_healing_boost),
             StatFilter::EffectHitRate(typ, min, max) => min_max!(result, typ, min, max, effect_hit_rate),
 
+            StatFilter::CritValue(typ, min, max) => todo!(),
+            StatFilter::EffectiveHP(typ, min, max) => todo!(),
+            StatFilter::Weight(typ, min, max) => todo!(),
+
             StatFilter::ElementalDmgBoost(typ, min, max) => {
                 let val = match typ {
                     StatFilterType::Base => result.calculated_stats.0.elemental_dmg_boost[result.calculated_stats.0.element],
@@ -246,7 +255,7 @@ impl StatFilter {
             },
 
             StatFilter::Action(action, min, max) => {
-                let col = result.cols.iter().find(|(col, _)| col.to_name() == action).map(|(_, val)| *val).unwrap_or(0.0);
+                let col = result.cols.iter().find(|(col, _)| col == action).map(|(_, val)| *val).unwrap_or(0.0);
                 min.map_or(true, |min| col >= min) && max.map_or(true, |max| col <= max)
             }
         }
@@ -609,9 +618,9 @@ fn get_lc_preview(
 #[specta::specta]
 fn get_character_actions(
     character_cfg: CharacterConfig,
-) -> Vec<String> {
+) -> Vec<(StatColumnType, String)> {
     let character_kit = character_cfg.get_kit();
-    character_kit.get_stat_columns(&EnemyConfig::default()).iter().map(|x| x.column_type.to_name().to_owned()).collect()
+    character_kit.get_stat_columns(&EnemyConfig::default()).iter().map(|x| (x.column_type, x.column_type.to_name().to_owned())).collect()
 }
 
 #[derive(Debug, Clone, Type, Serialize, Deserialize, Default)]

@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 // import { withLenses, lens, mergeDeep } from "@dhmk/zustand-lens";
-import { CharacterState, LightConeState, Relic, SortResultsSerde } from "@/bindings.gen";
+import { CharacterState, LightConeState, Relic, SortResultsSerde, StatFilter } from "@/bindings.gen";
 import { Characters } from "@/kits/characters";
 import { LightCones } from "@/kits/light-cones";
 import { Draft, produce } from "immer";
@@ -19,12 +19,13 @@ export const useRelics = create<{
     relics: Relic[]
     setRelics: (relics: Relic[]) => void
 }>()(persist((set) => ({
-    relics: [],
+    relics: [] as Relic[],
     setRelics: (relics) => set({ relics }),
 }), { name: "relics" }))
 
 interface FilterForm {
     statType: "base" | "combat"
+    statFilters: StatFilter[]
 }
 
 interface MyCoolCharacterInformation {
@@ -61,7 +62,7 @@ const defaultCharacterState = {
 }
 
 const defaultCharacterInfo: MyCoolCharacterInformation = { state: defaultCharacterState, lightCone: undefined }
-const defaultFilterForm: FilterForm = { statType: "combat" }
+const defaultFilterForm: FilterForm = { statType: "combat", statFilters: [] }
 
 export const useCharacters = create<{
     characters: Partial<Record<Characters, MyCoolCharacterInformation>>,

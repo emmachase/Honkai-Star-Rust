@@ -1,4 +1,4 @@
-import { Character, CharacterConfig, EffectPropertyType, IShallBeMyOwnSwordConfig, JingliuConfig, LightCone, LightConeConfig, Relic, RelicSlot, ResolvedCalculatorResult, SortResultsSerde, commands } from "@/bindings.gen";
+import { Character, CharacterConfig, EffectPropertyType, IShallBeMyOwnSwordConfig, JingliuConfig, LightCone, LightConeConfig, Relic, RelicSlot, ResolvedCalculatorResult, SortResultsSerde, StatColumnType, StatFilter, StatFilterType, commands } from "@/bindings.gen";
 import { OptimizerTable } from "@/components/domain/optimizer-table";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
@@ -6,12 +6,16 @@ import { Combobox } from "@/components/ui/combobox";
 import { Header } from "@/components/ui/header";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Column, Row } from "@/components/util/flex";
 import { CharacterKitComponent, CharacterKitMap, Characters } from "@/kits/characters";
 import { LightConeKitComponent, LightConeKitMap, LightCones } from "@/kits/light-cones";
 import { IShallBeMyOwnSwordKit } from "@/kits/lightcones/i-shall-be-my-own-sword";
 import { useCalcs, useCharacters, useRelics, useSession } from "@/store";
 import { cn } from "@/utils";
+import { useForm } from "@/utils/form";
+import { UnionToIntersection } from "@/utils/magic";
+import { findAndMap } from "@/utils/misc";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { PropsWithChildren, Suspense, startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
@@ -28,7 +32,7 @@ function CardTitle(props: PropsWithChildren<React.HTMLAttributes<HTMLElement>>) 
 
 function Card({ children, className, ...props }: PropsWithChildren<React.HTMLAttributes<HTMLDivElement>>) {
     return (
-        <div className={cn("border p-4 rounded-md bg-card w-[260px]", className)} {...props}>
+        <div className={cn("border p-4 rounded-md bg-card w-[280px]", className)} {...props}>
             <Column>
                 {children}
             </Column>
@@ -510,6 +514,56 @@ function CharacterSelectCard() {
     </Card>;
 }
 
+type FilterKey = keyof UnionToIntersection<StatFilter>;
+type FilterValue = [StatFilterType, number | null, number | null] | [StatColumnType, number | null, number | null];
+function FilterRow<K extends FilterKey>(
+    props: { 
+        key: K,
+        label: string, 
+        big?: boolean 
+    } & (K extends "Action" ? { actionKey: StatColumnType } : {})
+) {
+    const selectedCharacter = useSession(s => s.selectedCharacter);
+    const allFilterData = useCharacters(s => s.getFilterForm(selectedCharacter).statFilters);
+    const filterData = findAndMap(allFilterData, f => {
+        if (!(props.key in f)) {
+            return false;
+        }
+
+        if (props.key === "Action") {
+            return (f as Extract<StatFilter, {Action: unknown}>).Action[0] === (props as {actionKey: StatColumnType}).actionKey;
+        }
+
+        return true;
+    }, f => (f as Record<FilterKey, FilterValue>)[props.key as FilterKey]) ?? [null, null, null];
+
+    const { register } = useForm({
+        min: filterData[1] ?? "",
+        max: filterData[2] ?? "",
+    }, v => {
+        console.log(v);
+    })
+
+    // if (props.big) {
+    //     return <Column className="border p-1 rounded-md text-center gap-0">
+    //         {props.label}
+    //         <Row className="justify-between items-center">
+    //             <Row className="gap-2 items-center"><Input className="w-16 p-2 h-6" />&le;</Row>
+    //             <span>x</span>
+    //             <Row className="gap-2 items-center">&le;<Input className="w-16 p-2 h-6" /></Row>
+    //         </Row>
+    //     </Column>
+    // } else {
+    const extraClass = props.big && "text-xs"
+
+        return <Row className="justify-between items-center gap-0">
+            <Row className="gap-2 items-center"><Input className={cn("w-16 p-2 h-6", extraClass)} {...register("min")} />&le;</Row>
+            <span className={cn(extraClass)}>{props.label}</span>
+            <Row className="gap-2 items-center">&le;<Input className={cn("w-16 p-2 h-6", extraClass)} {...register("max")} /></Row>
+        </Row>;
+    // }
+}
+
 function Index() {
     const character = useSession(s => s.selectedCharacter);
     const characterInfo = useCharacters(s => s.getCharacter(character));
@@ -580,21 +634,40 @@ function Index() {
 
                 <MainStatFilterCard onChange={fs => setFilters(fs)}/>
 
-                <Card className="w-[320px]">
+                <Card>
                     <CardTitle>Stat Filters</CardTitle>
                     <Column>
                         <ButtonGroup value={filterForm.statType} onChange={v => updateFilterForm(character, f => { f.statType = v })}
                             options={[{ label: "Base Stats", value: "base" }, { label: "Combat Stats", value: "combat" }]}
                         />
                         <Column className="gap-1">
-                            { characterActions?.map(action =>
-                                <Row className="justify-between items-center">
-                                    <Row className="gap-2 items-center"><Input className="w-16 p-2 h-8"/>&le;</Row>
-                                    <span>{action.replace(/(?<=[a-z])[A-Z]/, x => ` ${x}`)}</span>
-                                    <Row className="gap-2 items-center">&le;<Input className="w-16 p-2 h-8"/></Row>
-                                </Row>
-                            ) }
+                            <FilterRow label="HP" key="HP" />
+                            <FilterRow label="ATK" key="ATK" />
+                            <FilterRow label="DEF" key="DEF" />
+                            <FilterRow label="SPD" key="SPD" />
+                            <FilterRow label="CR" key="CritRate" />
+                            <FilterRow label="CD" key="CritDmg" />
+                            <FilterRow label="EHR" key="EffectHitRate" />
+                            <FilterRow label="ER" key="EffectHitRate" />
+                            <FilterRow label="BE" key="BreakEffect" />
+                            {/* <FilterRow label="Energy Regen" />
+                            <FilterRow label="Heal Boost" /> */}
+                            <FilterRow label="ELEM" key="ElementalDmgBoost" />
                         </Column>
+                    </Column>
+                </Card>
+                <Card>
+                    <CardTitle>Calculation Filters</CardTitle>
+                    <Column className="gap-1">
+                        <FilterRow label="CV" key="CritValue" />
+                        <FilterRow label="EHP" key="EffectiveHP" />
+                        <FilterRow label="Weight" key="Weight" />
+
+                        <Separator className="my-2"/>
+
+                        { characterActions?.map(action =>
+                            <FilterRow big label={action[1]} key="Action" actionKey={action[0]} />
+                        ) }
                     </Column>
                 </Card>
 

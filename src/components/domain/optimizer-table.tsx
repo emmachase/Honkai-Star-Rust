@@ -7,7 +7,6 @@ import { cn } from "@/utils"
 import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 import { ArrowDown10 } from "lucide-react"
 import { useCharacters } from "@/store"
-import { usePrevious } from "../util/hooks"
 
 // type OptimizerData = CharacterStats
 
@@ -55,9 +54,9 @@ export function OptimizerTable({ data: allSorts, className, statType, ...props }
     const data = useMemo(() => [...(columnMap.get(activeColumn) ?? [])], [columnMap, activeColumn])
     const extraCols = useMemo(() => (data?.[0]?.cols ?? []).map((c, i) => [c[0], i] as const), [data])
     const columns = useMemo(() => [
+        helper.accessor(row => row.calculated_stats[statType].hp,  { id: "hp" , header: sum+"HP" , cell: roundCell   }),  
         helper.accessor(row => row.calculated_stats[statType].atk, { id: "atk", header: sum+"ATK", cell: roundCell   }),
         helper.accessor(row => row.calculated_stats[statType].def, { id: "def", header: sum+"DEF", cell: roundCell   }),
-        helper.accessor(row => row.calculated_stats[statType].hp,  { id: "hp" , header: sum+"HP" , cell: roundCell   }),
         helper.accessor(row => row.calculated_stats[statType].spd, { id: "spd", header: sum+"SPD", cell: decimalCell }),
 
         helper.accessor(row => row.calculated_stats[statType].crit_rate,       { id: "crit_rate"      , header: sum+"CR" , cell: percentCell }),
@@ -91,11 +90,11 @@ export function OptimizerTable({ data: allSorts, className, statType, ...props }
                           ? null
                           : <Button
                                 variant="ghost"
-                                size="sm"
+                                size="xs"
                                 onClick={() => setActiveColumn(header.column.id)}
-                                className={cn(activeColumn !== header.id && "mx-[12px]")}
+                                className={cn(activeColumn !== header.id && "mx-[10px]")}
                             >
-                                <ArrowDown10 size={16} className={cn("mr-[8px]", activeColumn !== header.id && "hidden")}/>
+                                <ArrowDown10 size={12} className={cn("mr-[6px]", activeColumn !== header.id && "hidden")}/>
                                 {flexRender(
                                     header.column.columnDef.header,
                                     header.getContext()
@@ -116,7 +115,7 @@ export function OptimizerTable({ data: allSorts, className, statType, ...props }
                             data-state={row.getIsSelected() && "selected"}
                         >
                             {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id} className="text-center w-[100px]">
+                            <TableCell key={cell.id} className="text-center w-[100px] text-xs">
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </TableCell>
                             ))}

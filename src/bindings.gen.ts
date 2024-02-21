@@ -30,7 +30,7 @@ return await TAURI_INVOKE("plugin:tauri-specta|get_lc_preview", { lightCone });
 async getEidolonUpgrades(character: Character) : Promise<EidolonUpgrade[]> {
 return await TAURI_INVOKE("plugin:tauri-specta|get_eidolon_upgrades", { character });
 },
-async getCharacterActions(characterCfg: CharacterConfig) : Promise<string[]> {
+async getCharacterActions(characterCfg: CharacterConfig) : Promise<([StatColumnType, string])[]> {
 return await TAURI_INVOKE("plugin:tauri-specta|get_character_actions", { characterCfg });
 }
 }
@@ -143,7 +143,8 @@ export type SparkleTeammateConfig = { cd_stat: number; skill_cd_buff: boolean; c
  * 
  */
 export type SparkleUltimateDesc = { _unknown: number; skill_points: number; dmg_boost_pct: number; duration: number }
-export type StatFilter = { HP: [StatFilterType, number | null, number | null] } | { ATK: [StatFilterType, number | null, number | null] } | { DEF: [StatFilterType, number | null, number | null] } | { SPD: [StatFilterType, number | null, number | null] } | { EffectRes: [StatFilterType, number | null, number | null] } | { CritRate: [StatFilterType, number | null, number | null] } | { CritDmg: [StatFilterType, number | null, number | null] } | { BreakEffect: [StatFilterType, number | null, number | null] } | { EnergyRecharge: [StatFilterType, number | null, number | null] } | { OutgoingHealingBoost: [StatFilterType, number | null, number | null] } | { ElementalDmgBoost: [StatFilterType, number | null, number | null] } | { EffectHitRate: [StatFilterType, number | null, number | null] } | { Action: [string, number | null, number | null] }
+export type StatColumnType = "BasicDamage" | "SkillDamage" | "SkillHeal" | "SkillShield" | "UltimateDamage" | "UltimateHeal" | "UltimateShield" | "FollowUpDamage"
+export type StatFilter = { HP: [StatFilterType, number | null, number | null] } | { ATK: [StatFilterType, number | null, number | null] } | { DEF: [StatFilterType, number | null, number | null] } | { SPD: [StatFilterType, number | null, number | null] } | { EffectRes: [StatFilterType, number | null, number | null] } | { CritRate: [StatFilterType, number | null, number | null] } | { CritDmg: [StatFilterType, number | null, number | null] } | { BreakEffect: [StatFilterType, number | null, number | null] } | { EnergyRecharge: [StatFilterType, number | null, number | null] } | { OutgoingHealingBoost: [StatFilterType, number | null, number | null] } | { ElementalDmgBoost: [StatFilterType, number | null, number | null] } | { EffectHitRate: [StatFilterType, number | null, number | null] } | { CritValue: [StatFilterType, number | null, number | null] } | { EffectiveHP: [StatFilterType, number | null, number | null] } | { Weight: [StatFilterType, number | null, number | null] } | { Action: [StatColumnType, number | null, number | null] }
 export type StatFilterType = "Base" | "Combat"
 
 /** tauri-specta globals **/
