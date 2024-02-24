@@ -3,7 +3,7 @@
 // #![allow(dead_code)] // TODO: remove
 
 use std::cmp::Reverse;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashSet};
 use std::sync::RwLock;
 use std::thread::available_parallelism;
 use std::{thread, sync::Arc};
@@ -69,6 +69,8 @@ fn prank_him_john(
 
     let time = std::time::Instant::now();
 
+    let valid_actions = kit.get_stat_columns(&enemy_config).into_iter().map(|c| c.column_type).collect::<HashSet<_>>();
+
     let cols = calculate_cols(
         flags.running.clone(),
         CalculatorParameters {
@@ -81,7 +83,7 @@ fn prank_him_john(
             light_cone,
             enemy_config,
             relic_conditionals: ConditionalRelicSetEffects::default(),
-            filters,
+            filters: filters.into_iter().filter(|f| f.filter_action(&valid_actions)).collect(),
         },
         relics_by_slot.clone()
     );
@@ -228,6 +230,13 @@ enum StatFilter {
 }
 
 impl StatFilter {
+    fn filter_action(&self, valid_actions: &HashSet<StatColumnType>) -> bool {
+        match self {
+            StatFilter::Action(action, min, max) => valid_actions.contains(action),
+            _ => true,
+        }
+    }
+
     fn apply(&self, result: &PreCalculatorResult) -> bool {
         match self {
             StatFilter::HP(typ, min, max) => min_max!(result, typ, min, max, hp),

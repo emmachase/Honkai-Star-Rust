@@ -11,10 +11,11 @@ import { Column, Row } from "@/components/util/flex";
 import { CharacterKitComponent, CharacterKitMap, Characters } from "@/kits/characters";
 import { LightConeKitComponent, LightConeKitMap, LightCones } from "@/kits/light-cones";
 import { IShallBeMyOwnSwordKit } from "@/kits/lightcones/i-shall-be-my-own-sword";
-import { useCalcs, useCharacters, useRelics, useSession } from "@/store";
+import { StatFilters, useCalcs, useCharacters, useRelics, useSession } from "@/store";
 import { cn } from "@/utils";
 import { useForm } from "@/utils/form";
 import { UnionToIntersection } from "@/utils/magic";
+import { NaNTo } from "@/utils/math";
 import { findAndMap } from "@/utils/misc";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -514,54 +515,119 @@ function CharacterSelectCard() {
     </Card>;
 }
 
-type FilterKey = keyof UnionToIntersection<StatFilter>;
-type FilterValue = [StatFilterType, number | null, number | null] | [StatColumnType, number | null, number | null];
-function FilterRow<K extends FilterKey>(
-    props: { 
-        key: K,
-        label: string, 
-        big?: boolean 
-    } & (K extends "Action" ? { actionKey: StatColumnType } : {})
+// type FilterKey = keyof UnionToIntersection<StatFilter>;
+// type FilterValue = [StatFilterType, number | null, number | null] | [StatColumnType, number | null, number | null];
+export interface MinMax {
+    min: number | null,
+    max: number | null,
+}
+
+function FilterRow(
+    props: {
+        label: string,
+        big?: boolean,
+
+        value: MinMax | undefined,
+        onChange: (value: MinMax) => void,
+    }
 ) {
-    const selectedCharacter = useSession(s => s.selectedCharacter);
-    const allFilterData = useCharacters(s => s.getFilterForm(selectedCharacter).statFilters);
-    const filterData = findAndMap(allFilterData, f => {
-        if (!(props.key in f)) {
-            return false;
-        }
+    const { register, nullableNumberConfig } = useForm<MinMax>(props.value ?? { min: null, max: null }, props.onChange);
 
-        if (props.key === "Action") {
-            return (f as Extract<StatFilter, {Action: unknown}>).Action[0] === (props as {actionKey: StatColumnType}).actionKey;
-        }
-
-        return true;
-    }, f => (f as Record<FilterKey, FilterValue>)[props.key as FilterKey]) ?? [null, null, null];
-
-    const { register } = useForm({
-        min: filterData[1] ?? "",
-        max: filterData[2] ?? "",
-    }, v => {
-        console.log(v);
-    })
-
-    // if (props.big) {
-    //     return <Column className="border p-1 rounded-md text-center gap-0">
-    //         {props.label}
-    //         <Row className="justify-between items-center">
-    //             <Row className="gap-2 items-center"><Input className="w-16 p-2 h-6" />&le;</Row>
-    //             <span>x</span>
-    //             <Row className="gap-2 items-center">&le;<Input className="w-16 p-2 h-6" /></Row>
-    //         </Row>
-    //     </Column>
-    // } else {
     const extraClass = props.big && "text-xs"
 
-        return <Row className="justify-between items-center gap-0">
-            <Row className="gap-2 items-center"><Input className={cn("w-16 p-2 h-6", extraClass)} {...register("min")} />&le;</Row>
-            <span className={cn(extraClass)}>{props.label}</span>
-            <Row className="gap-2 items-center">&le;<Input className={cn("w-16 p-2 h-6", extraClass)} {...register("max")} /></Row>
-        </Row>;
-    // }
+    return <Row className="justify-between items-center gap-0">
+        <Row className="gap-2 items-center"><Input className={cn("w-16 p-2 h-6", extraClass)} {...register("min", nullableNumberConfig)} />&le;</Row>
+        <span className={cn(extraClass)}>{props.label}</span>
+        <Row className="gap-2 items-center">&le;<Input className={cn("w-16 p-2 h-6", extraClass)} {...register("max", nullableNumberConfig)} /></Row>
+    </Row>;
+}
+
+function generateStatFilters(statType: StatFilterType, filters: StatFilters) {
+    const statFilters: StatFilter[] = []
+
+    const v = (f: MinMax | undefined, cb: (m: MinMax) => void) => f && (f.min !== null || f.max !== null) && cb(f)
+
+    v(filters.HP                  , f => statFilters.push({ HP:                   [statType, f.min, f.max] }))
+    v(filters.ATK                 , f => statFilters.push({ ATK:                  [statType, f.min, f.max] }))
+    v(filters.DEF                 , f => statFilters.push({ DEF:                  [statType, f.min, f.max] }))
+    v(filters.SPD                 , f => statFilters.push({ SPD:                  [statType, f.min, f.max] }))
+    v(filters.CritRate            , f => statFilters.push({ CritRate:             [statType, f.min, f.max] }))
+    v(filters.CritDmg             , f => statFilters.push({ CritDmg:              [statType, f.min, f.max] }))
+    v(filters.EffectHitRate       , f => statFilters.push({ EffectHitRate:        [statType, f.min, f.max] }))
+    v(filters.EffectRes           , f => statFilters.push({ EffectRes:            [statType, f.min, f.max] }))
+    v(filters.BreakEffect         , f => statFilters.push({ BreakEffect:          [statType, f.min, f.max] }))
+    v(filters.EnergyRecharge      , f => statFilters.push({ EnergyRecharge:       [statType, f.min, f.max] }))
+    v(filters.OutgoingHealingBoost, f => statFilters.push({ OutgoingHealingBoost: [statType, f.min, f.max] }))
+    v(filters.ElementalDmgBoost   , f => statFilters.push({ ElementalDmgBoost:    [statType, f.min, f.max] }))
+
+    const actions = filters.actions ?? {}
+    for (const action in actions) {
+        statFilters.push({ Action: [action as StatColumnType, actions[action].min, actions[action].max] })
+    }
+
+    return statFilters
+}
+
+function StatFilterForm(props: { kit: CharacterConfig | undefined }) {
+    const character = useSession(s => s.selectedCharacter);
+    const [filterForm, updateFilterForm] = useCharacters(s => [s.getFilterForm(character), s.updateFilterForm]);
+
+    // TODO: Refactor this, probably shouldn't be pulling in the kit here
+    const { data: characterActions } = useQuery({
+        queryKey: ["characterAction", props.kit],
+        queryFn: () => props.kit ? commands.getCharacterActions(props.kit) : null,
+    })
+
+    const { register } = useForm<StatFilters>(filterForm.statFilters, v => {
+        updateFilterForm(character, f => {
+            f.statFilters = v
+        })
+    })
+
+    const { register: registerAction } = useForm<Record<string, MinMax>>(filterForm.statFilters.actions ?? {}, v => {
+        updateFilterForm(character, f => {
+            f.statFilters.actions = v
+        })
+    })
+
+    return <>
+        <Card>
+            <CardTitle>Stat Filters</CardTitle>
+            <Column>
+                <ButtonGroup value={filterForm.statType} onChange={v => updateFilterForm(character, f => { f.statType = v })}
+                    options={[{ label: "Base Stats", value: "Base" }, { label: "Combat Stats", value: "Combat" }]}
+                />
+                <Column className="gap-1">
+                    <FilterRow label="HP" {...register("HP")} />
+                    <FilterRow label="ATK" {...register("ATK")} />
+                    <FilterRow label="DEF" {...register("DEF")} />
+                    <FilterRow label="SPD" {...register("SPD")} />
+                    <FilterRow label="CR" {...register("CritRate")} />
+                    <FilterRow label="CD" {...register("CritDmg")} />
+                    <FilterRow label="EHR" {...register("EffectHitRate")} />
+                    <FilterRow label="RES" {...register("EffectRes")} />
+                    <FilterRow label="BE" {...register("BreakEffect")} />
+                    {/* <FilterRow label="Energy Regen" />
+                    <FilterRow label="Heal Boost" /> */}
+                    <FilterRow label="ERR" {...register("EnergyRecharge")} />
+                </Column>
+            </Column>
+        </Card>
+        <Card>
+            <CardTitle>Calculation Filters</CardTitle>
+            <Column className="gap-1">
+                <FilterRow label="CV" value={undefined} onChange={x => {}} />
+                <FilterRow label="EHP" value={undefined} onChange={x => {}} />
+                <FilterRow label="Weight" value={undefined} onChange={x => {}} />
+
+                <Separator className="my-2"/>
+
+                { characterActions?.map(action =>
+                    <FilterRow key={action[0]} big label={action[1]} {...registerAction(action[0])} />
+                ) }
+            </Column>
+        </Card>
+    </>
 }
 
 function Index() {
@@ -608,16 +674,11 @@ function Index() {
                     weakness_broken: false,
                     debuff_count: 3,
                 },
-                []
+                generateStatFilters(filterForm.statType, filterForm.statFilters)
             ));
             setRunning(false);
-        }
+        }1
     };
-
-    const { data: characterActions } = useQuery({
-        queryKey: ["characterAction", kit],
-        queryFn: () => kit ? commands.getCharacterActions(kit) : undefined,
-    })
 
     return (
         <Column className="min-w-0">
@@ -634,42 +695,7 @@ function Index() {
 
                 <MainStatFilterCard onChange={fs => setFilters(fs)}/>
 
-                <Card>
-                    <CardTitle>Stat Filters</CardTitle>
-                    <Column>
-                        <ButtonGroup value={filterForm.statType} onChange={v => updateFilterForm(character, f => { f.statType = v })}
-                            options={[{ label: "Base Stats", value: "base" }, { label: "Combat Stats", value: "combat" }]}
-                        />
-                        <Column className="gap-1">
-                            <FilterRow label="HP" key="HP" />
-                            <FilterRow label="ATK" key="ATK" />
-                            <FilterRow label="DEF" key="DEF" />
-                            <FilterRow label="SPD" key="SPD" />
-                            <FilterRow label="CR" key="CritRate" />
-                            <FilterRow label="CD" key="CritDmg" />
-                            <FilterRow label="EHR" key="EffectHitRate" />
-                            <FilterRow label="ER" key="EffectHitRate" />
-                            <FilterRow label="BE" key="BreakEffect" />
-                            {/* <FilterRow label="Energy Regen" />
-                            <FilterRow label="Heal Boost" /> */}
-                            <FilterRow label="ELEM" key="ElementalDmgBoost" />
-                        </Column>
-                    </Column>
-                </Card>
-                <Card>
-                    <CardTitle>Calculation Filters</CardTitle>
-                    <Column className="gap-1">
-                        <FilterRow label="CV" key="CritValue" />
-                        <FilterRow label="EHP" key="EffectiveHP" />
-                        <FilterRow label="Weight" key="Weight" />
-
-                        <Separator className="my-2"/>
-
-                        { characterActions?.map(action =>
-                            <FilterRow big label={action[1]} key="Action" actionKey={action[0]} />
-                        ) }
-                    </Column>
-                </Card>
+                <StatFilterForm kit={kit} />
 
                 <PermutationCard
                     allRelics={allRelics}
@@ -684,7 +710,7 @@ function Index() {
                     scrollbar={<ScrollBar orientation="horizontal" />}
                 >
                     <OptimizerTable key={character} className="w-full"
-                        statType={filterForm.statType === "base" ? 0 : 1}
+                        statType={filterForm.statType === "Base" ? 0 : 1}
                         data={result}
                     />
                 </ScrollArea>

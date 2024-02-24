@@ -5,8 +5,9 @@ import { Row } from "../util/flex"
 import { useEffect, useState } from "react";
 import { NaNTo, clamp } from "@/utils/math";
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
+export type InputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "value"> & {
+    value?: string | number | null | undefined
+}
 
 const BufferedInput = React.forwardRef<HTMLInputElement, InputProps>(
     ({ onChange, value, ...props }, ref) => {
@@ -19,7 +20,7 @@ const BufferedInput = React.forwardRef<HTMLInputElement, InputProps>(
         return (
             <input
                 ref={ref}
-                value={bufferedValue}
+                value={bufferedValue ?? ""}
                 onChange={(e) => {
                     setBufferedValue(e.currentTarget.value);
                 }}
@@ -34,7 +35,7 @@ const BufferedInput = React.forwardRef<HTMLInputElement, InputProps>(
 )
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps & { raw?: boolean }>(
-  ({ className, type, raw, ...props }, ref) => {
+  ({ className, type, raw, value, ...props }, ref) => {
     const Component = raw ? "input" : BufferedInput;
 
     return (
@@ -45,6 +46,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps & { raw?: boo
           className
         )}
         ref={ref}
+        value={value ?? ""}
         {...props}
       />
     )

@@ -1,5 +1,6 @@
 import { produce } from "immer";
 import { SyntheticEvent, ChangeEvent } from "react";
+import { NaNTo } from "./math";
 
 export interface RegisterConfig<
     F,
@@ -14,7 +15,7 @@ export interface RegisterConfig<
     fromForm?: (value: F) => To;
 }
 
-export function useForm<T extends Record<string, unknown>>(
+export function useForm<T extends {}>(
     value: T,
     setValue: (value: T) => void,
 ) {
@@ -28,7 +29,7 @@ export function useForm<T extends Record<string, unknown>>(
             key: K,
             config?: RegisterConfig<F, ValueName, ChangeName, T[K]>,
         ): { [k in ValueName]: T[K] } & {
-            [k in ChangeName]: (fieldValue: T[K]) => void;
+            [k in ChangeName]: (fieldValue: T[K] | ChangeEvent<HTMLInputElement>) => void;
         } {
             return {
                 [config?.valueName ?? "value"]: (config?.toForm ?? ((x) => x))(
@@ -60,7 +61,7 @@ export function useForm<T extends Record<string, unknown>>(
                     );
                 },
             } as { [k in ValueName]: T[K] } & {
-                [k in ChangeName]: (fieldValue: T[K]) => void;
+                [k in ChangeName]: (fieldValue: (T[K] | ChangeEvent<HTMLInputElement>)) => void;
             };
         },
 
@@ -71,6 +72,38 @@ export function useForm<T extends Record<string, unknown>>(
             return myForm.registerGeneric(key, config);
         },
 
+        nullableNumberConfig: {
+            fromForm(value: string) {
+                return value.trim() === "" ? null : NaNTo(+value, 0)
+            },
+
+            toForm(value: number | null) {
+                return value?.toString() ?? ""
+            },
+        },
+
+        numberConfig: {
+            fromForm(value: string) {
+                return NaNTo(+value, 0)
+            },
+
+            toForm(value: number) {
+                return value.toString()
+            },
+        },
+
+        // registerNumber<K extends keyof T>(
+        //     key: K,
+        //     config?: RegisterConfig<number, "value", "onChange", T[K]>,
+        // ) {
+        //     return myForm.registerGeneric(key, {
+        //         ...config,
+        //         onChangeName: "onChange",
+        //         toForm: (x: T[K]) => (config?.toForm ?? ((x) => x))(x) as number,
+        //         fromForm: (x: number) => (config?.fromForm ?? ((x) => x))(x) as T[K],
+        //     });
+        // },
+
         registerSlider<K extends keyof T, F>(
             key: K,
             config?: RegisterConfig<F, "value", "onValueChange", T[K]>,
@@ -79,8 +112,7 @@ export function useForm<T extends Record<string, unknown>>(
                 ...config,
                 onChangeName: "onValueChange",
                 toForm: (x: T[K]) => [(config?.toForm ?? ((x) => x))(x)] as F[],
-                fromForm: (x: F[]) =>
-                    (config?.fromForm ?? ((x) => x))(x[0]) as T[K],
+                fromForm: (x: F[]) => (config?.fromForm ?? ((x) => x))(x[0]) as T[K],
             });
         },
 

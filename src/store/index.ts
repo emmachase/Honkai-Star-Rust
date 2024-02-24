@@ -5,13 +5,14 @@ import { CharacterState, LightConeState, Relic, SortResultsSerde, StatFilter } f
 import { Characters } from "@/kits/characters";
 import { LightCones } from "@/kits/light-cones";
 import { Draft, produce } from "immer";
+import { MinMax } from "@/routes";
 
 type Theme = "light" | "dark" | "system"
 export const useSettings = create<{
     theme: Theme
     setTheme: (theme: Theme) => void
 }>()(persist((set) => ({
-    theme: "system",
+    theme: "system" as Theme,
     setTheme: (theme) => set({ theme }),
 }), { name: "settings" }))
 
@@ -23,9 +24,30 @@ export const useRelics = create<{
     setRelics: (relics) => set({ relics }),
 }), { name: "relics" }))
 
+export interface StatFilters {
+    HP?: MinMax
+    ATK?: MinMax
+    DEF?: MinMax
+    SPD?: MinMax
+    CritRate?: MinMax
+    CritDmg?: MinMax
+    EffectHitRate?: MinMax
+    EffectRes?: MinMax
+    BreakEffect?: MinMax
+    EnergyRecharge?: MinMax
+    OutgoingHealingBoost?: MinMax
+    ElementalDmgBoost?: MinMax
+
+    // EffectiveHP: MinMax
+    // Weight: MinMax
+    // Action: MinMax
+
+    actions?: Record<string, MinMax>
+}
+
 interface FilterForm {
-    statType: "base" | "combat"
-    statFilters: StatFilter[]
+    statType: "Base" | "Combat"
+    statFilters: StatFilters
 }
 
 interface MyCoolCharacterInformation {
@@ -62,7 +84,7 @@ const defaultCharacterState = {
 }
 
 const defaultCharacterInfo: MyCoolCharacterInformation = { state: defaultCharacterState, lightCone: undefined }
-const defaultFilterForm: FilterForm = { statType: "combat", statFilters: [] }
+const defaultFilterForm: FilterForm = { statType: "Combat", statFilters: {} }
 
 export const useCharacters = create<{
     characters: Partial<Record<Characters, MyCoolCharacterInformation>>,
